@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+@theme {
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-leaf-light: #dcfce7;
+  --color-leaf: #22c55e;
+  --color-leaf-deep: #166534;
+
+  --color-amber-light: #fef3c7;
+  --color-amber: #f59e0b;
+  --color-amber-deep: #b45309;
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+}
+
+@layer base {
+  :root {
+    --background: #ffffff; /* White background */
+    --foreground: #0f172a; /* Slate 900 for high readability */
+    
+    --card: #ffffff;
+    --card-foreground: #0f172a;
+    
+    --popover: #ffffff;
+    --popover-foreground: #0f172a;
+    
+    --primary: #16a34a; /* Ecological Green */
+    --primary-foreground: #ffffff;
+    
+    --secondary: #f1f5f9; /* Slate 100 */
+    --secondary-foreground: #0f172a;
+    
+    --muted: #f8fafc; /* Very light slate */
+    --muted-foreground: #64748b;
+    
+    --accent: #f1f5f9;
+    --accent-foreground: #16a34a;
+    
+    --destructive: #ef4444;
+    --destructive-foreground: #ffffff;
+    
+    --border: #e2e8f0;
+    --input: #e2e8f0;
+    --ring: #16a34a;
+    
+    --radius: 1rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/50 shadow-sm;
+  }
+  
+  .glass-nav {
+    @apply bg-white/80 backdrop-blur-md border-b border-border/50 shadow-sm;
+  }
+  
+  .bg-mesh-leaf {
+    background-color: #ffffff;
+    background-image: 
+      radial-gradient(at 10% 10%, #dcfce7 0px, transparent 40%),
+      radial-gradient(at 90% 90%, #fef3c7 0px, transparent 40%),
+      radial-gradient(at 50% 50%, #ffffff 0px, transparent 60%);
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-leaf-deep to-leaf;
+  }
+}
