@@ -135,7 +135,7 @@ export default async function RestaurantPage({ params }: { params: Promise<{ id:
           <h2 className="text-2xl font-bold text-slate-900 mb-6">Packs disponibles hoy</h2>
           
           <div className="grid sm:grid-cols-2 gap-6">
-            {data.packs.map(pack => (
+            {data.packs.map((pack: any) => (
               <Link key={pack.id} href={`/checkout/${pack.id}`} className="block group">
                 <FoodCard {...pack} />
               </Link>
