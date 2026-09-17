@@ -23,7 +23,7 @@ const MOCK_PACKS = [
     packName: "Pack Marino",
     originalPrice: 55.0,
     rescuePrice: 25.0,
-    imageUrl: "https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?w=500&auto=format&fit=crop&q=60",
+    imageUrl: "https://images.unsplash.com/photo-1532996160161-59da33e9d0d3?w=500&auto=format&fit=crop&q=60",
     pickupTime: "16:00 - 17:00",
     distance: "1.2 km",
   },
@@ -48,6 +48,50 @@ const MOCK_PACKS = [
     imageUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&auto=format&fit=crop&q=60",
     pickupTime: "11:30 - 12:30",
     distance: "3.1 km",
+  },
+  {
+    id: "5",
+    restaurantId: "5",
+    restaurantName: "La Mar",
+    packName: "Pack Ceviche Clásico",
+    originalPrice: 75.0,
+    rescuePrice: 28.0,
+    imageUrl: "https://images.unsplash.com/photo-1626844131082-256783844137?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "15:00 - 16:30",
+    distance: "1.5 km",
+  },
+  {
+    id: "6",
+    restaurantId: "6",
+    restaurantName: "Roky's",
+    packName: "Pack 1/4 Pollo",
+    originalPrice: 28.0,
+    rescuePrice: 12.0,
+    imageUrl: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "21:30 - 23:00",
+    distance: "0.5 km",
+  },
+  {
+    id: "7",
+    restaurantId: "7",
+    restaurantName: "Chifa Titi",
+    packName: "Pack Chaufa Salvaje",
+    originalPrice: 42.0,
+    rescuePrice: 18.0,
+    imageUrl: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "19:00 - 20:30",
+    distance: "4.2 km",
+  },
+  {
+    id: "8",
+    restaurantId: "8",
+    restaurantName: "Hikari",
+    packName: "Pack Lomo Saltado",
+    originalPrice: 35.0,
+    rescuePrice: 16.0,
+    imageUrl: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "22:00 - 23:00",
+    distance: "1.8 km",
   }
 ];
 
@@ -91,6 +135,46 @@ const MOCK_RESTAURANTS = [
     distance: "3.1 km",
     packsAvailable: 2,
     location: { lat: -12.148152, lng: -77.021759 } // Barranco
+  },
+  {
+    id: "5",
+    name: "La Mar",
+    category: "Cevichería",
+    rating: 4.9,
+    reviews: 4500,
+    distance: "1.5 km",
+    packsAvailable: 2,
+    location: { lat: -12.1152, lng: -77.0425 } // Miraflores
+  },
+  {
+    id: "6",
+    name: "Roky's",
+    category: "Pollería",
+    rating: 4.3,
+    reviews: 1200,
+    distance: "0.5 km",
+    packsAvailable: 6,
+    location: { lat: -12.1264, lng: -77.0253 } // Miraflores
+  },
+  {
+    id: "7",
+    name: "Chifa Titi",
+    category: "Comida Oriental",
+    rating: 4.8,
+    reviews: 2100,
+    distance: "4.2 km",
+    packsAvailable: 1,
+    location: { lat: -12.0934, lng: -77.0051 } // San Borja
+  },
+  {
+    id: "8",
+    name: "Hikari",
+    category: "Pollería y Chifa",
+    rating: 4.5,
+    reviews: 1800,
+    distance: "1.8 km",
+    packsAvailable: 4,
+    location: { lat: -12.0743, lng: -77.0821 } // San Miguel
   }
 ];
 

@@ -1,4 +1,4 @@
-import { Leaf, Award, MapPin, PackageOpen, ChevronRight, Settings } from "lucide-react";
+import { Leaf, Award, MapPin, PackageOpen, ChevronRight, Settings, CreditCard, Salad, Bell, Shield, Crown } from "lucide-react";
 import Link from "next/link";
 
 export default function ProfilePage() {
@@ -79,6 +79,67 @@ export default function ProfilePage() {
             </div>
             <p className="text-xs text-slate-400 mt-1 text-right">5 / 10 para Nivel 2</p>
           </div>
+        </div>
+
+        {/* Settings Menu */}
+        <h3 className="text-lg font-bold text-slate-900 mb-4 mt-10">Configuración de Cuenta</h3>
+        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+          
+          <Link href="/prime" className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer group">
+            <div className="size-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Crown className="size-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-slate-900">Suscripción Prime</h4>
+              <p className="text-sm text-slate-500">Gestionar plan y beneficios</p>
+            </div>
+            <ChevronRight className="size-5 text-slate-300" />
+          </Link>
+
+          <div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer group">
+            <div className="size-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <CreditCard className="size-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-slate-900">Métodos de Pago</h4>
+              <p className="text-sm text-slate-500">Tarjetas, Yape y Plin</p>
+            </div>
+            <ChevronRight className="size-5 text-slate-300" />
+          </div>
+
+          <div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer group">
+            <div className="size-10 rounded-xl bg-leaf-soft text-leaf-deep flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Salad className="size-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-slate-900">Preferencias Alimenticias</h4>
+              <p className="text-sm text-slate-500">Vegano, sin gluten, alergias</p>
+            </div>
+            <ChevronRight className="size-5 text-slate-300" />
+          </div>
+
+          <div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer group">
+            <div className="size-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Bell className="size-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-slate-900">Notificaciones</h4>
+              <p className="text-sm text-slate-500">Alertas de rescate cercanas</p>
+            </div>
+            <ChevronRight className="size-5 text-slate-300" />
+          </div>
+
+          <div className="flex items-center gap-4 p-4 hover:bg-slate-50 transition cursor-pointer group">
+            <div className="size-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <Shield className="size-5" />
+            </div>
+            <div className="flex-1">
+              <h4 className="font-bold text-slate-900">Seguridad y Privacidad</h4>
+              <p className="text-sm text-slate-500">Contraseña y datos personales</p>
+            </div>
+            <ChevronRight className="size-5 text-slate-300" />
+          </div>
+
         </div>
 
       </div>

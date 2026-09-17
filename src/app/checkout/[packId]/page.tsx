@@ -17,23 +17,68 @@ const MOCK_PACKS: Record<string, any> = {
     pickupTime: "20:00 - 21:30",
     address: "Av. Diagonal 308, Miraflores",
   },
-  "pack-1-1": {
-    restaurantName: "La Lucha Sanguchería",
-    packName: "Pack Especial Sorpresa",
-    originalPrice: 45.0,
-    rescuePrice: 20.0,
-    imageUrl: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=500&auto=format&fit=crop&q=60",
-    pickupTime: "20:00 - 21:30",
-    address: "Av. Diagonal 308, Miraflores",
-  },
   "2": {
     restaurantName: "Punto Azul",
     packName: "Pack Marino",
     originalPrice: 55.0,
     rescuePrice: 25.0,
-    imageUrl: "https://images.unsplash.com/photo-1599084993091-1cb5c0721cc6?w=500&auto=format&fit=crop&q=60",
+    imageUrl: "https://images.unsplash.com/photo-1532996160161-59da33e9d0d3?w=500&auto=format&fit=crop&q=60",
     pickupTime: "16:00 - 17:00",
     address: "Calle San Martín 595, Miraflores",
+  },
+  "3": {
+    restaurantName: "Siete Sopas",
+    packName: "Pack Sopa Menestrón",
+    originalPrice: 38.0,
+    rescuePrice: 15.0,
+    imageUrl: "https://images.unsplash.com/photo-1547592166-23ac45744acd?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "22:00 - 23:30",
+    address: "Av. Arequipa 2394, Lince",
+  },
+  "4": {
+    restaurantName: "Bodega Verde",
+    packName: "Pack Desayuno Saludable",
+    originalPrice: 30.0,
+    rescuePrice: 14.0,
+    imageUrl: "https://images.unsplash.com/photo-1509440159596-0249088772ff?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "11:30 - 12:30",
+    address: "Jirón Sucre 335A, Barranco",
+  },
+  "5": {
+    restaurantName: "La Mar",
+    packName: "Pack Ceviche Clásico",
+    originalPrice: 75.0,
+    rescuePrice: 28.0,
+    imageUrl: "https://images.unsplash.com/photo-1626844131082-256783844137?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "15:00 - 16:30",
+    address: "Av. La Mar 770, Miraflores",
+  },
+  "6": {
+    restaurantName: "Roky's",
+    packName: "Pack 1/4 Pollo",
+    originalPrice: 28.0,
+    rescuePrice: 12.0,
+    imageUrl: "https://images.unsplash.com/photo-1598514982205-f36b96d1e8d4?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "21:30 - 23:00",
+    address: "Av. Benavides 2405, Miraflores",
+  },
+  "7": {
+    restaurantName: "Chifa Titi",
+    packName: "Pack Chaufa Salvaje",
+    originalPrice: 42.0,
+    rescuePrice: 18.0,
+    imageUrl: "https://images.unsplash.com/photo-1585032226651-759b368d7246?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "19:00 - 20:30",
+    address: "Av. Javier Prado Este 1212, San Borja",
+  },
+  "8": {
+    restaurantName: "Hikari",
+    packName: "Pack Lomo Saltado",
+    originalPrice: 35.0,
+    rescuePrice: 16.0,
+    imageUrl: "https://images.unsplash.com/photo-1604908176997-125f25cc6f3d?w=500&auto=format&fit=crop&q=60",
+    pickupTime: "22:00 - 23:00",
+    address: "Av. La Mar 2339, San Miguel",
   }
 };
 
@@ -172,16 +217,25 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
                   }`}>
                     <div className="flex items-center gap-3">
                       <input type="radio" name="payment" checked={paymentMethod === "yape"} onChange={() => setPaymentMethod("yape")} className="accent-purple-600 size-4" />
-                      <span className="font-semibold text-slate-700">Yape / Plin</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-slate-700">Billetera Digital</span>
+                        <div className="flex gap-1">
+                          <span className="bg-[#742384] text-white text-[10px] font-bold px-1.5 py-0.5 rounded-sm">Yape</span>
+                          <span className="bg-[#00E5FF] text-slate-900 text-[10px] font-bold px-1.5 py-0.5 rounded-sm">Plin</span>
+                        </div>
+                      </div>
                     </div>
                   </label>
                   {paymentMethod === "yape" && (
                     <div className="p-4 border-2 border-t-0 border-purple-500 rounded-b-xl bg-purple-50 flex flex-col items-center">
-                      <div className="w-32 h-32 bg-white rounded-lg p-2 mb-3 shadow-sm border border-purple-100 flex items-center justify-center">
-                         <div className="w-full h-full bg-slate-900 rounded-sm flex items-center justify-center text-white text-[10px] text-center p-2">QR Yape/Plin</div>
+                      <div className="w-32 h-32 bg-white rounded-lg p-3 mb-3 shadow-sm border border-purple-100 flex flex-col items-center justify-center relative overflow-hidden">
+                        <div className="absolute inset-0 bg-[url('https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=ecorescate')] opacity-20 bg-center bg-no-repeat bg-cover"></div>
+                        <div className="relative z-10 w-12 h-12 bg-white rounded-xl shadow flex items-center justify-center">
+                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#742384] to-[#00E5FF]"></div>
+                        </div>
                       </div>
-                      <p className="text-xs text-slate-600 text-center mb-3">Escanea el QR para pagar S/ {total.toFixed(2)}</p>
-                      <input type="text" placeholder="Código de aprobación" className="w-full p-3 rounded-lg border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm" />
+                      <p className="text-xs text-slate-600 text-center mb-3">Escanea el QR con Yape o Plin para pagar <span className="font-bold text-slate-900">S/ {total.toFixed(2)}</span></p>
+                      <input type="text" placeholder="Código de aprobación (6 dígitos)" className="w-full p-3 rounded-lg border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm text-center tracking-widest font-mono" maxLength={6} />
                     </div>
                   )}
                 </div>

@@ -219,7 +219,7 @@ export default function Home() {
             </div>
             <div className="relative">
               <div className="aspect-square md:aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl">
-                <img src="https://images.unsplash.com/photo-1516026672322-bc52d61a55d5?w=1200&auto=format&fit=crop&q=80" alt="Ecosistema amazónico" className="w-full h-full object-cover" />
+                <img src="https://images.unsplash.com/photo-1542385151-efd9000785a0?w=1200&auto=format&fit=crop&q=80" alt="Selva de la Amazonía Peruana" className="w-full h-full object-cover" />
               </div>
               <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-2xl shadow-xl border border-slate-100 max-w-xs">
                 <div className="flex items-center gap-3 mb-2">
