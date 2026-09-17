@@ -13,8 +13,8 @@ const MOCK_DB: Record<string, any> = {
     description: "Uno de los restaurantes más icónicos de Lima, conocido por sus sándwiches tradicionales y jugos frescos. Famoso por su pan francés crujiente y lechón asado. Únete a nosotros al final del día para rescatar ingredientes frescos que no se utilizaron.",
     coverUrl: "/restaurants/LALUCHA.jpg",
     packName: "Pack Criollo Especial",
-    originalPrice: 45.0,
-    rescuePrice: 20.0
+    originalPrice: 38.90,
+    rescuePrice: 14.90
   },
   "2": {
     name: "Punto Azul",
@@ -26,8 +26,8 @@ const MOCK_DB: Record<string, any> = {
     description: "Cevichería tradicional peruana con pesca del día garantizada. Ofrecemos exquisitos platos marinos. Nuestros packs de rescate incluyen guarniciones y platos elaborados durante el turno tarde que conservan su máxima calidad.",
     coverUrl: "/restaurants/PUNTOAZUL.jpg",
     packName: "Pack Marino",
-    originalPrice: 55.0,
-    rescuePrice: 25.0
+    originalPrice: 52.00,
+    rescuePrice: 19.90
   },
   "3": {
     name: "Siete Sopas",
@@ -39,8 +39,8 @@ const MOCK_DB: Record<string, any> = {
     description: "Abierto 24 horas ofreciendo caldos reparadores y platos criollos contundentes. Rescatamos el exceso de producción de nuestras sopas diarias asegurando siempre el mismo sabor de casa y apoyando a una alimentación más sostenible.",
     coverUrl: "/restaurants/SieteSopas.jpg",
     packName: "Pack Sopa Menestrón",
-    originalPrice: 38.0,
-    rescuePrice: 15.0
+    originalPrice: 34.00,
+    rescuePrice: 14.90
   },
   "4": {
     name: "Bodega Verde",
@@ -52,8 +52,8 @@ const MOCK_DB: Record<string, any> = {
     description: "Un oasis verde en el corazón de Barranco. Nos especializamos en comida saludable, postres artesanales y café orgánico. Nuestros packs sorpresa contienen deliciosos postres y sándwiches horneados el mismo día.",
     coverUrl: "/restaurants/BodegaVerde.jpg",
     packName: "Pack Desayuno Saludable",
-    originalPrice: 30.0,
-    rescuePrice: 14.0
+    originalPrice: 28.50,
+    rescuePrice: 12.90
   },
   "5": {
     name: "La Mar",
@@ -65,8 +65,8 @@ const MOCK_DB: Record<string, any> = {
     description: "Reconocida cevichería limeña que celebra los sabores del mar peruano. Rescatamos insumos fresquísimos al cierre del turno almuerzo para que disfrutes de la más alta gastronomía cuidando el océano y tu bolsillo.",
     coverUrl: "/restaurants/LAMAR.jpg",
     packName: "Pack Ceviche Clásico",
-    originalPrice: 75.0,
-    rescuePrice: 28.0
+    originalPrice: 79.00,
+    rescuePrice: 29.90
   },
   "6": {
     name: "Roky's",
@@ -78,8 +78,8 @@ const MOCK_DB: Record<string, any> = {
     description: "El tradicional sabor del pollo a la brasa peruano. Al final del día armamos packs con los deliciosos pollos asados y guarniciones que no se sirvieron, garantizando que puedas disfrutar este platillo bandera evitando el desperdicio.",
     coverUrl: "/restaurants/Rockys.jpg",
     packName: "Pack 1/4 Pollo",
-    originalPrice: 28.0,
-    rescuePrice: 12.0
+    originalPrice: 26.90,
+    rescuePrice: 11.90
   },
   "7": {
     name: "Chifa Titi",
@@ -91,8 +91,8 @@ const MOCK_DB: Record<string, any> = {
     description: "Fusión peruano-china de la más alta calidad. Disfruta de la técnica al wok con nuestros packs de rescate que incluyen generosas porciones de arroces, tallarines y carnes preparadas ese mismo día.",
     coverUrl: "/restaurants/ChifaTiti.jpg",
     packName: "Pack Chaufa Salvaje",
-    originalPrice: 42.0,
-    rescuePrice: 18.0
+    originalPrice: 59.00,
+    rescuePrice: 22.90
   },
   "8": {
     name: "Hikari",
@@ -104,8 +104,8 @@ const MOCK_DB: Record<string, any> = {
     description: "Expertos en Lomo Saltado, fusionando los sabores criollos y orientales. Apoyamos la sostenibilidad empaquetando al final de nuestro servicio aquellos platos humeantes que merecen ser disfrutados.",
     coverUrl: "/restaurants/Hikari.jpg",
     packName: "Pack Lomo Saltado",
-    originalPrice: 35.0,
-    rescuePrice: 16.0
+    originalPrice: 44.90,
+    rescuePrice: 17.90
   }
 };
 
