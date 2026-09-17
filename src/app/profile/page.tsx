@@ -1,7 +1,26 @@
+"use client";
+
 import { Leaf, Award, MapPin, PackageOpen, ChevronRight, Settings, CreditCard, Salad, Bell, Shield, Crown } from "lucide-react";
 import Link from "next/link";
+import { useState, useEffect } from "react";
 
 export default function ProfilePage() {
+  const [isPrime, setIsPrime] = useState(false);
+  const [userName, setUserName] = useState("Usuario");
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsPrime(localStorage.getItem('ecoRescatePrime') === 'true');
+      const userStr = localStorage.getItem('ecoRescateUser');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          if (user.name) setUserName(user.name);
+        } catch (e) {}
+      }
+    }
+  }, []);
+
   return (
     <div className="pt-24 pb-16 min-h-screen bg-slate-50">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -15,11 +34,18 @@ export default function ProfilePage() {
 
         {/* User Card */}
         <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 mb-8 flex items-center gap-6">
-          <div className="size-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-2xl">
-            S
+          <div className="size-20 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold text-2xl uppercase">
+            {userName.charAt(0)}
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-slate-900">Santiago</h2>
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
+              {userName}
+              {isPrime && (
+                <span className="bg-amber-100 text-amber-600 text-xs px-2 py-1 rounded-full flex items-center gap-1 border border-amber-200">
+                  <Crown className="size-3" /> Prime
+                </span>
+              )}
+            </h2>
             <p className="text-slate-500 flex items-center gap-1 mt-1">
               <MapPin className="size-4" /> Lima, Perú
             </p>
@@ -91,7 +117,7 @@ export default function ProfilePage() {
             </div>
             <div className="flex-1">
               <h4 className="font-bold text-slate-900">Suscripción Prime</h4>
-              <p className="text-sm text-slate-500">Gestionar plan y beneficios</p>
+              <p className="text-sm text-slate-500">{isPrime ? "Activa - Delivery Ecológico Ilimitado" : "Gestionar plan y beneficios"}</p>
             </div>
             <ChevronRight className="size-5 text-slate-300" />
           </Link>

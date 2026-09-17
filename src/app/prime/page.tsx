@@ -12,6 +12,9 @@ export default function PrimePage() {
   const handleSubscribe = () => {
     // Simular suscripción
     setIsSubscribed(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('ecoRescatePrime', 'true');
+    }
     confetti({
       particleCount: 100,
       spread: 70,
@@ -30,9 +33,14 @@ export default function PrimePage() {
         <p className="text-slate-600 max-w-md mx-auto mb-8">
           A partir de ahora, todos tus pedidos tendrán <strong>Delivery Gratuito Ecológico</strong>. Gracias por tu compromiso con el planeta.
         </p>
-        <Link href="/explore" className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg transition flex items-center gap-2">
-          Ver packs disponibles <ArrowRight className="size-4" />
-        </Link>
+        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          <Link href="/explore" className="bg-amber-500 hover:bg-amber-600 text-white font-bold px-8 py-3.5 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+            Ver packs disponibles <ArrowRight className="size-4" />
+          </Link>
+          <Link href="/profile" className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold px-8 py-3.5 rounded-xl shadow-sm transition flex items-center justify-center">
+            Ir a mi perfil
+          </Link>
+        </div>
       </div>
     );
   }
