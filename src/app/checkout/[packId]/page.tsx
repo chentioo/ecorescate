@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Clock, MapPin, Truck, Store, ShieldCheck, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
@@ -94,6 +94,12 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
   const [paymentMethod, setPaymentMethod] = useState<"card" | "yape">("card");
   const [isProcessing, setIsProcessing] = useState(false);
   const [isPrime, setIsPrime] = useState(false); // Simulamos si el usuario es Prime
+  
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsPrime(localStorage.getItem('ecoRescatePrime') === 'true');
+    }
+  }, []);
   
   const deliveryCost = isPrime ? 0 : 5.00;
   const total = pack.rescuePrice + (deliveryMethod === "delivery" ? deliveryCost : 0);

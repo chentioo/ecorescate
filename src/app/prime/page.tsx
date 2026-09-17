@@ -2,12 +2,27 @@
 
 import { CheckCircle2, ShieldCheck, Truck, Star, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import confetti from "canvas-confetti";
 
 export default function PrimePage() {
   const [isAnnual, setIsAnnual] = useState(true);
   const [isSubscribed, setIsSubscribed] = useState(false);
+  const [isStudent, setIsStudent] = useState(false);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const userStr = localStorage.getItem('ecoRescateUser');
+      if (userStr) {
+        try {
+          const user = JSON.parse(userStr);
+          if (user.email && user.email.toLowerCase().endsWith('.edu.pe')) {
+            setIsStudent(true);
+          }
+        } catch (e) {}
+      }
+    }
+  }, []);
 
   const handleSubscribe = () => {
     // Simular suscripción
@@ -126,14 +141,21 @@ export default function PrimePage() {
             </div>
 
             <div className="text-center mb-8">
+              {isStudent && (
+                <div className="mb-3 inline-flex items-center gap-1.5 bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-bold border border-green-200">
+                  <ShieldCheck className="size-3.5" /> Descuento Estudiante Activado (.edu.pe)
+                </div>
+              )}
               <div className="flex items-end justify-center gap-1 mb-2">
                 <span className="text-5xl font-extrabold text-slate-900">
-                  S/ {isAnnual ? '15.90' : '19.90'}
+                  S/ {isStudent ? (isAnnual ? '7.90' : '9.90') : (isAnnual ? '15.90' : '19.90')}
                 </span>
                 <span className="text-slate-500 font-medium mb-1">/mes</span>
               </div>
               <p className="text-slate-500 text-sm">
-                {isAnnual ? 'Facturado anualmente (S/ 190.80)' : 'Cancela en cualquier momento'}
+                {isAnnual 
+                  ? `Facturado anualmente (S/ ${isStudent ? '94.80' : '190.80'})` 
+                  : 'Cancela en cualquier momento'}
               </p>
             </div>
 
