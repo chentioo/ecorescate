@@ -77,6 +77,15 @@ export default function PrimePage() {
           <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10">
             Únete a nuestra membresía premium y disfruta de <strong>Delivery Ecológico Ilimitado</strong>, prioridad en packs exclusivos y apoya directamente a la reforestación local.
           </p>
+
+          {!isStudent && (
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 max-w-lg mx-auto backdrop-blur-sm">
+              <p className="text-amber-100 text-sm">
+                <strong className="text-amber-400">🎓 ¿Eres estudiante universitario?</strong><br />
+                Crea tu cuenta usando tu correo institucional <span className="font-mono bg-black/30 px-1 rounded">.edu.pe</span> y obtén un <strong className="text-white">50% de descuento</strong> automático.
+              </p>
+            </div>
+          )}
         </div>
       </section>
 

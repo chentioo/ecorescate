@@ -1,12 +1,23 @@
 "use client";
 
-import { Leaf, Award, MapPin, PackageOpen, ChevronRight, Settings, CreditCard, Salad, Bell, Shield, Crown } from "lucide-react";
+import { Leaf, Award, MapPin, PackageOpen, ChevronRight, Settings, CreditCard, Salad, Bell, Shield, Crown, LogOut } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 
 export default function ProfilePage() {
   const [isPrime, setIsPrime] = useState(false);
   const [userName, setUserName] = useState("Usuario");
+  const router = useRouter();
+
+  const handleLogout = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('ecoRescateUser');
+      localStorage.removeItem('ecoRescatePrime');
+      router.push('/login');
+    }
+  };
+
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -167,6 +178,19 @@ export default function ProfilePage() {
           </div>
 
         </div>
+
+        {/* Logout Button */}
+        <div className="mt-8 flex justify-center">
+          <button 
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-red-500 hover:text-red-600 font-semibold px-6 py-3 rounded-xl hover:bg-red-50 transition"
+          >
+            <LogOut className="size-5" />
+            Cerrar Sesión
+          </button>
+        </div>
+
+
 
       </div>
     </div>
