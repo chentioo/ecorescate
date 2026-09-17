@@ -28,6 +28,7 @@ interface ExploreMapProps {
     category: string;
     location: Location;
     packsAvailable: number;
+    logoUrl?: string;
   }>;
 }
 
