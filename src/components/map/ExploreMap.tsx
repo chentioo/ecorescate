@@ -107,11 +107,19 @@ export function ExploreMap({ restaurants }: ExploreMapProps) {
               position={restaurant.location}
               title={restaurant.name}
             >
-              <Pin
-                background={restaurant.packsAvailable > 0 ? "#16a34a" : "#64748b"}
-                borderColor={restaurant.packsAvailable > 0 ? "#15803d" : "#475569"}
-                glyphColor="#ffffff"
-              />
+              {restaurant.logoUrl ? (
+                <div className={`size-9 rounded-full overflow-hidden border-2 shadow-md flex items-center justify-center bg-white ${
+                  restaurant.packsAvailable > 0 ? "border-green-600" : "border-slate-500 opacity-80 grayscale-[20%]"
+                }`}>
+                  <img src={restaurant.logoUrl} alt={restaurant.name} className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <Pin
+                  background={restaurant.packsAvailable > 0 ? "#16a34a" : "#64748b"}
+                  borderColor={restaurant.packsAvailable > 0 ? "#15803d" : "#475569"}
+                  glyphColor="#ffffff"
+                />
+              )}
             </AdvancedMarker>
           ))}
         </Map>

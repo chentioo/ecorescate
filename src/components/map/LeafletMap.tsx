@@ -15,6 +15,7 @@ interface Restaurant {
   category: string;
   location: Location;
   packsAvailable: number;
+  logoUrl?: string;
 }
 
 interface LeafletMapProps {
@@ -80,15 +81,19 @@ export default function LeafletMap({ restaurants, userLocation, center }: Leafle
       const isAvailable = restaurant.packsAvailable > 0;
       const bgColor = isAvailable ? "#16a34a" : "#64748b";
 
+      const iconContent = restaurant.logoUrl 
+        ? `<img src="${restaurant.logoUrl}" alt="${restaurant.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
+        : `<span style="font-size: 14px; font-weight: bold;">🍴</span>`;
+
       const restaurantIcon = L.divIcon({
         className: "custom-restaurant-pin",
         html: `
-          <div style="background-color: ${bgColor}; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.2s;">
-            <span style="font-size: 14px; font-weight: bold;">🍴</span>
+          <div style="background-color: ${bgColor}; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2px solid white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.2); cursor: pointer; transition: transform 0.2s; overflow: hidden;">
+            ${iconContent}
           </div>
         `,
-        iconSize: [32, 32],
-        iconAnchor: [16, 16],
+        iconSize: [36, 36],
+        iconAnchor: [18, 18],
       });
 
       const popupContent = `

@@ -104,7 +104,8 @@ const MOCK_RESTAURANTS = [
     reviews: 2150,
     distance: "0.8 km",
     packsAvailable: 3,
-    location: { lat: -12.122114, lng: -77.030999 } // Miraflores
+    location: { lat: -12.122114, lng: -77.030999 },
+    logoUrl: "/logos/LaluchaLogo.jpg"
   },
   {
     id: "2",
@@ -114,7 +115,8 @@ const MOCK_RESTAURANTS = [
     reviews: 1840,
     distance: "1.2 km",
     packsAvailable: 5,
-    location: { lat: -12.120563, lng: -77.027063 } // Miraflores
+    location: { lat: -12.120563, lng: -77.027063 },
+    logoUrl: "/logos/puntoazul_logo.png"
   },
   {
     id: "3",
@@ -124,7 +126,8 @@ const MOCK_RESTAURANTS = [
     reviews: 3200,
     distance: "2.5 km",
     packsAvailable: 0,
-    location: { lat: -12.096316, lng: -77.034503 } // San Isidro
+    location: { lat: -12.096316, lng: -77.034503 },
+    logoUrl: "/logos/Sietesopaslogo.png"
   },
   {
     id: "4",
@@ -134,7 +137,8 @@ const MOCK_RESTAURANTS = [
     reviews: 950,
     distance: "3.1 km",
     packsAvailable: 2,
-    location: { lat: -12.148152, lng: -77.021759 } // Barranco
+    location: { lat: -12.148152, lng: -77.021759 },
+    logoUrl: "/logos/bodegaverdelogo.jpg"
   },
   {
     id: "5",
@@ -144,7 +148,8 @@ const MOCK_RESTAURANTS = [
     reviews: 4500,
     distance: "1.5 km",
     packsAvailable: 2,
-    location: { lat: -12.1152, lng: -77.0425 } // Miraflores
+    location: { lat: -12.1152, lng: -77.0425 },
+    logoUrl: "/logos/lamarlogo.jpg"
   },
   {
     id: "6",
@@ -154,7 +159,8 @@ const MOCK_RESTAURANTS = [
     reviews: 1200,
     distance: "0.5 km",
     packsAvailable: 6,
-    location: { lat: -12.1264, lng: -77.0253 } // Miraflores
+    location: { lat: -12.1264, lng: -77.0253 },
+    logoUrl: "/logos/rockyslogo.jpg"
   },
   {
     id: "7",
@@ -164,7 +170,8 @@ const MOCK_RESTAURANTS = [
     reviews: 2100,
     distance: "4.2 km",
     packsAvailable: 1,
-    location: { lat: -12.0934, lng: -77.0051 } // San Borja
+    location: { lat: -12.0934, lng: -77.0051 },
+    logoUrl: "/logos/chifatitilogo.jpg"
   },
   {
     id: "8",
@@ -174,7 +181,8 @@ const MOCK_RESTAURANTS = [
     reviews: 1800,
     distance: "1.8 km",
     packsAvailable: 4,
-    location: { lat: -12.0743, lng: -77.0821 } // San Miguel
+    location: { lat: -12.0743, lng: -77.0821 },
+    logoUrl: "/logos/hikarilogo.jpg"
   }
 ];
 

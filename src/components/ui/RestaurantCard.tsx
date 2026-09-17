@@ -7,6 +7,7 @@ interface RestaurantCardProps {
   reviews: number;
   distance: string;
   packsAvailable: number;
+  logoUrl?: string;
 }
 
 export function RestaurantCard({
@@ -16,6 +17,7 @@ export function RestaurantCard({
   reviews,
   distance,
   packsAvailable,
+  logoUrl,
 }: RestaurantCardProps) {
   const hasPacks = packsAvailable > 0;
 
@@ -24,10 +26,14 @@ export function RestaurantCard({
       hasPacks ? 'hover:border-primary/20' : 'opacity-80 grayscale-[20%]'
     }`}>
       {/* Avatar / Initials */}
-      <div className={`size-14 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 shadow-inner ${
+      <div className={`size-14 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 shadow-inner overflow-hidden ${
         hasPacks ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-400'
       }`}>
-        {name.substring(0, 2).toUpperCase()}
+        {logoUrl ? (
+          <img src={logoUrl} alt={name} className="w-full h-full object-cover" />
+        ) : (
+          name.substring(0, 2).toUpperCase()
+        )}
       </div>
 
       {/* Info */}
