@@ -149,6 +149,20 @@ export default function PartnerPortalPage() {
         setSuccessMessage(`¡Pedido ${result.order.orderCode} verificado y entregado con éxito!`);
         setValidatedToday((prev) => [result.order!, ...prev.filter((o) => o.id !== result.order!.id)]);
         
+        // Notificar al cliente que su pedido fue completado
+        if (result.order.id) {
+          fetch("/api/notifications/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              orderId: result.order.id,
+              email: result.order.userEmail,
+              customerName: result.order.userName,
+              type: "order_completed",
+            }),
+          }).catch((e) => console.warn("Completion notification error:", e));
+        }
+
         confetti({
           particleCount: 80,
           spread: 70,

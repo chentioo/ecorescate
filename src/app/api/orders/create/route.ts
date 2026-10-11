@@ -145,10 +145,36 @@ export async function POST(request: Request) {
       return orderPayload;
     });
 
+    // Envío automático de notificación si hay email disponible
+    let notificationSent = false;
+    if (createdOrder.userEmail && process.env.RESEND_API_KEY) {
+      try {
+        const { generateOrderEmailHtml } = await import("@/lib/notifications");
+        const html = generateOrderEmailHtml(createdOrder, createdOrder.userName);
+        await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${process.env.RESEND_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            from: process.env.RESEND_FROM_EMAIL || "EcoRescate <onboarding@resend.dev>",
+            to: [createdOrder.userEmail],
+            subject: `🌱 ¡Reserva Confirmada [${createdOrder.orderCode}]! Tu comida te espera en ${createdOrder.restaurantName}`,
+            html,
+          }),
+        });
+        notificationSent = true;
+      } catch (e) {
+        console.warn("Auto notification send notice:", e);
+      }
+    }
+
     return NextResponse.json({
       success: true,
       message: "Reserva creada exitosamente en el servidor",
       order: createdOrder,
+      notificationSent,
     });
   } catch (error: any) {
     console.error("Error en /api/orders/create:", error);

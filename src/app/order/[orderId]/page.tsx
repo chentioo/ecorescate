@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { getOrderById } from "@/lib/orders";
 import { Order } from "@/types";
+import { OrderNotificationCard } from "@/components/notifications/OrderNotificationCard";
 
 export default function OrderSuccessPage({ params }: { params: Promise<{ orderId: string }> }) {
   const resolvedParams = use(params);
@@ -222,6 +223,23 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderId
               </div>
             )}
           </div>
+
+          {/* Comprobantes & Notificaciones (WhatsApp, Correo y Alertas) */}
+          <OrderNotificationCard 
+            order={order || { 
+              id: orderId, 
+              orderCode: displayCode, 
+              restaurantName: displayRestaurant, 
+              packName: displayPack, 
+              pickupTime: displayPickupTime, 
+              restaurantAddress: displayAddress, 
+              totalPrice: 14.90, 
+              moneySaved: 24.00, 
+              co2SavedKg: 2.5, 
+              quantity: displayQuantity, 
+              bringOwnContainer: false 
+            }} 
+          />
 
           {/* Botones de Acción */}
           <div className="space-y-2.5 pt-2">
