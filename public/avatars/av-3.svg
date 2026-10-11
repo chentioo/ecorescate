@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#e0e7ff" />
+      <stop offset="100%" stop-color="#c7d2fe" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#bg3)" />
+  <!-- Body/Shoulders -->
+  <path d="M28 88 C28 72 40 68 50 68 C60 68 72 72 72 88 Z" fill="#16a34a" />
+  <!-- Scarf/Collar -->
+  <polygon points="46,68 54,68 50,76" fill="#dc2626" />
+  <!-- Head -->
+  <circle cx="50" cy="54" r="16" fill="#fbcfe8" />
+  <!-- Hair -->
+  <path d="M34 50 C34 40 40 38 50 38 C60 38 66 40 66 50 C66 44 60 41 50 41 C40 41 34 44 34 50 Z" fill="#78350f" />
+  <!-- Chef Hat -->
+  <path d="M34 38 L66 38 L64 33 L36 33 Z" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1" />
+  <circle cx="38" cy="26" r="9" fill="#ffffff" />
+  <circle cx="50" cy="22" r="11" fill="#ffffff" />
+  <circle cx="62" cy="26" r="9" fill="#ffffff" />
+  <!-- Eyes -->
+  <circle cx="45" cy="53" r="2" fill="#1f2937" />
+  <circle cx="55" cy="53" r="2" fill="#1f2937" />
+  <!-- Smile -->
+  <path d="M47 59 Q50 62 53 59" stroke="#1f2937" stroke-width="1.5" stroke-linecap="round" fill="none" />
+  <!-- Leaf on hat -->
+  <path d="M48 24 Q52 18 56 20 Q54 26 48 24 Z" fill="#22c55e" />
+</svg>

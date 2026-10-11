@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100" height="100">
+  <defs>
+    <linearGradient id="bg5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fef3c7" />
+      <stop offset="100%" stop-color="#fde68a" />
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="48" fill="url(#bg5)" />
+  <!-- Pizza Crust -->
+  <path d="M22 28 Q50 20 78 28 L50 82 Z" fill="#d97706" />
+  <!-- Cheese -->
+  <path d="M26 31 Q50 24 74 31 L50 77 Z" fill="#facc15" />
+  <!-- Pepperonis -->
+  <circle cx="44" cy="38" r="4.5" fill="#dc2626" />
+  <circle cx="58" cy="46" r="4" fill="#dc2626" />
+  <circle cx="48" cy="62" r="3.5" fill="#dc2626" />
+  <!-- Basil Leaves -->
+  <path d="M38 52 Q44 48 44 54 Z" fill="#16a34a" />
+  <path d="M56 34 Q62 30 62 36 Z" fill="#16a34a" />
+  <!-- Eyes -->
+  <circle cx="44" cy="48" r="2.5" fill="#1e293b" />
+  <circle cx="54" cy="48" r="2.5" fill="#1e293b" />
+  <!-- Smile -->
+  <path d="M46 54 Q49 57 52 54" stroke="#1e293b" stroke-width="1.8" stroke-linecap="round" fill="none" />
+</svg>
