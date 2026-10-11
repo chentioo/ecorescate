@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { doc, writeBatch } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
+export const dynamic = "force-dynamic";
+
 const MOCK_RESTAURANTS = [
   {
     id: "1",
