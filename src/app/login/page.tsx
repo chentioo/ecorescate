@@ -49,6 +49,9 @@ export default function LoginPage() {
     if (code === "auth/popup-blocked") {
       return "El navegador bloqueó la ventana emergente. Por favor habilítala.";
     }
+    if (code === "auth/unauthorized-domain") {
+      return "Dominio no autorizado en Firebase. Agrega 'ecorescate-web.vercel.app' en Firebase Console (Authentication > Settings > Authorized Domains).";
+    }
     return err.message || "Ocurrió un error. Por favor intenta nuevamente.";
   };
 

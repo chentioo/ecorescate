@@ -35,6 +35,9 @@ export default function RegisterPage() {
     if (code === "auth/popup-closed-by-user") {
       return "Se cerró la ventana de inicio de sesión con Google.";
     }
+    if (code === "auth/unauthorized-domain") {
+      return "Dominio no autorizado en Firebase. Agrega 'ecorescate-web.vercel.app' en Firebase Console (Authentication > Settings > Authorized Domains).";
+    }
     return err.message || "Ocurrió un error al registrar la cuenta.";
   };
 
