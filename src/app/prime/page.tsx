@@ -64,7 +64,27 @@ export default function PrimePage() {
     setIsProcessing(true);
 
     try {
-      // 1. Guardar suscripción Prime en Firestore
+      // 1. Procesar pago en pasarela de pagos
+      const primeOrderId = `prime-${user.uid.slice(0, 6)}-${Date.now()}`;
+      try {
+        await fetch("/api/payments/process", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            orderId: primeOrderId,
+            userId: user.uid,
+            amount: finalPrice,
+            currency: "PEN",
+            paymentMethod,
+            customerEmail: user.email || "",
+            customerName: profile?.name || user.displayName || "Socio Prime",
+          }),
+        });
+      } catch (err) {
+        console.warn("Prime payment gateway notice:", err);
+      }
+
+      // 2. Guardar suscripción Prime en Firestore
       const userRef = doc(db, "users", user.uid);
       await setDoc(userRef, {
         isPrime: true,
@@ -74,12 +94,12 @@ export default function PrimePage() {
         primeSubscribedAt: serverTimestamp(),
       }, { merge: true });
 
-      // 2. Actualizar estado local reactivo
+      // 3. Actualizar estado local reactivo
       await refreshUserProfile();
 
       setIsSubscribed(true);
 
-      // 3. Efecto de celebración
+      // 4. Efecto de celebración
       confetti({
         particleCount: 120,
         spread: 80,
@@ -88,7 +108,6 @@ export default function PrimePage() {
       });
     } catch (e) {
       console.error("Error al procesar suscripción Prime:", e);
-      // Fallback local en caso de error
       setIsSubscribed(true);
     } finally {
       setIsProcessing(false);

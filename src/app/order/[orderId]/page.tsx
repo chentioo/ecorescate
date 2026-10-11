@@ -17,7 +17,10 @@ import {
   ShieldCheck, 
   Navigation,
   User,
-  ShoppingBag
+  ShoppingBag,
+  CreditCard,
+  Wallet,
+  Banknote
 } from "lucide-react";
 import { getOrderById } from "@/lib/orders";
 import { Order } from "@/types";
@@ -222,6 +225,45 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderId
                 </div>
               </div>
             )}
+          </div>
+
+          {/* Comprobante de Pago y Transacción Bancaria */}
+          <div className="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3">
+              <div className="size-8 rounded-xl bg-white border border-slate-200 shadow-xs flex items-center justify-center text-slate-700">
+                {order?.paymentMethod === "yape" ? (
+                  <Wallet className="size-4 text-purple-600" />
+                ) : order?.paymentMethod === "cash" ? (
+                  <Banknote className="size-4 text-emerald-600" />
+                ) : (
+                  <CreditCard className="size-4 text-primary" />
+                )}
+              </div>
+              <div>
+                <p className="font-bold text-slate-900">
+                  {order?.paymentMethod === "yape" 
+                    ? "Billetera Digital (Yape / Plin)" 
+                    : order?.paymentMethod === "cash" 
+                    ? "Pago en Local (Contraentrega)" 
+                    : "Tarjeta Débito / Crédito"}
+                </p>
+                <p className="text-[11px] text-slate-500 font-mono">
+                  {order?.authorizationCode ? `Aut: ${order.authorizationCode}` : `Ref: ${displayCode}`}
+                </p>
+              </div>
+            </div>
+
+            <div className="text-right">
+              <span className={`inline-flex items-center gap-1 font-bold px-2 py-0.5 rounded-full text-[10px] ${
+                order?.paymentMethod === "cash" 
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-emerald-100 text-emerald-800"
+              }`}>
+                <CheckCircle2 className="size-3" />
+                {order?.paymentMethod === "cash" ? "Pendiente en local" : "Pago Aprobado"}
+              </span>
+              <p className="text-slate-700 font-extrabold text-xs mt-0.5">{displayTotal}</p>
+            </div>
           </div>
 
           {/* Comprobantes & Notificaciones (WhatsApp, Correo y Alertas) */}

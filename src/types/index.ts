@@ -62,5 +62,25 @@ export interface Order {
   bringOwnContainer?: boolean;
   notes?: string;
   status: "confirmed" | "ready" | "completed" | "cancelled";
+  paymentStatus?: "pending" | "paid" | "failed";
+  transactionId?: string;
+  authorizationCode?: string;
+  createdAt: any;
+}
+
+export interface PaymentTransaction {
+  id: string;
+  orderId: string;
+  userId: string;
+  amount: number;
+  currency: "PEN" | "USD";
+  paymentMethod: "card" | "yape" | "cash";
+  status: "approved" | "pending" | "rejected";
+  gateway: "culqi" | "mercadopago" | "stripe" | "sandbox";
+  cardBrand?: "visa" | "mastercard" | "amex" | "other";
+  last4?: string;
+  authorizationCode?: string;
+  yapeOperationCode?: string;
+  errorMessage?: string;
   createdAt: any;
 }

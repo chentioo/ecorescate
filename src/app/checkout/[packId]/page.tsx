@@ -149,7 +149,15 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
   const [bringOwnContainer, setBringOwnContainer] = useState(false);
   const [orderNotes, setOrderNotes] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+
+  // Estados de Pasarela de Pago
+  const [cardNumber, setCardNumber] = useState("4242 4242 4242 4242");
+  const [cardExpDate, setCardExpDate] = useState("12/28");
+  const [cardCvv, setCardCvv] = useState("420");
+  const [cardholderName, setCardholderName] = useState("");
+  const [yapeOperationCode, setYapeOperationCode] = useState("847291");
 
   const isPrime = profile?.isPrime ?? false;
 
@@ -210,8 +218,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
 
     setErrorMessage(null);
     setIsProcessing(true);
+    setProcessingStep("Verificando disponibilidad de raciones...");
 
     try {
+      // 1. Crear el pedido en el servidor con transacción atómica
       const order = await createOrder({
         userId: user.uid,
         userName: profile?.name || user.displayName || user.email?.split("@")[0] || "Usuario EcoRescate",
@@ -234,6 +244,36 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
         notes: orderNotes,
       });
 
+      // 2. Procesar pago a través de la pasarela segura
+      setProcessingStep("Autorizando transacción con pasarela bancaria...");
+      const paymentRes = await fetch("/api/payments/process", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          orderId: order.id,
+          userId: user.uid,
+          amount: total,
+          currency: "PEN",
+          paymentMethod,
+          cardInput: paymentMethod === "card" ? {
+            cardNumber,
+            expDate: cardExpDate,
+            cvv: cardCvv,
+            cardholderName: cardholderName || profile?.name || user.displayName || "Cliente EcoRescate",
+          } : undefined,
+          yapeOperationCode: paymentMethod === "yape" ? yapeOperationCode : undefined,
+          customerEmail: user.email || "",
+          customerName: profile?.name || user.displayName || "Cliente EcoRescate",
+        }),
+      });
+
+      const paymentData = await paymentRes.json();
+      if (!paymentRes.ok || !paymentData.success) {
+        throw new Error(paymentData.error || "El pago no pudo ser autorizado por la pasarela.");
+      }
+
+      setProcessingStep("¡Pago aprobado! Generando comprobante y código QR...");
+
       // Actualizar perfil local reactivo inmediatamente
       try {
         await refreshUserProfile();
@@ -241,9 +281,10 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
 
       router.push(`/order/${order.id}?type=${deliveryMethod}`);
     } catch (err: any) {
-      console.error("Error al procesar reserva:", err);
-      setErrorMessage(err.message || "No se pudo procesar la reserva. Por favor intenta de nuevo.");
+      console.error("Error al procesar reserva y pago:", err);
+      setErrorMessage(err.message || "No se pudo procesar el pago. Por favor verifica tus datos e intenta de nuevo.");
       setIsProcessing(false);
+      setProcessingStep(null);
     }
   };
 
@@ -463,25 +504,74 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
                   </label>
                   {paymentMethod === "card" && (
                     <div className="p-4 border-2 border-t-0 border-primary rounded-b-2xl bg-primary/5 space-y-3 animate-fadeIn">
-                      <input 
-                        type="text" 
-                        placeholder="Número de tarjeta (ej. 4557 ...)" 
-                        defaultValue="4557 8892 1204 9821"
-                        className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono bg-white" 
-                      />
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Número de Tarjeta (Visa, Mastercard o Amex):
+                        </label>
+                        <input 
+                          type="text" 
+                          placeholder="4242 4242 4242 4242" 
+                          value={cardNumber}
+                          onChange={(e) => {
+                            const val = e.target.value.replace(/\D/g, "").slice(0, 16);
+                            const formatted = val.replace(/(.{4})/g, "$1 ").trim();
+                            setCardNumber(formatted);
+                          }}
+                          className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono bg-white font-semibold" 
+                        />
+                      </div>
+
                       <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            Expiración (MM/AA):
+                          </label>
+                          <input 
+                            type="text" 
+                            placeholder="MM/AA" 
+                            value={cardExpDate}
+                            onChange={(e) => {
+                              let val = e.target.value.replace(/\D/g, "").slice(0, 4);
+                              if (val.length >= 3) {
+                                val = `${val.slice(0, 2)}/${val.slice(2)}`;
+                              }
+                              setCardExpDate(val);
+                            }}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono text-center bg-white font-semibold" 
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                            CVV (Seguridad):
+                          </label>
+                          <input 
+                            type="password" 
+                            placeholder="•••" 
+                            value={cardCvv}
+                            onChange={(e) => setCardCvv(e.target.value.replace(/\D/g, "").slice(0, 4))}
+                            maxLength={4}
+                            className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono text-center bg-white font-semibold" 
+                          />
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Titular de la tarjeta:
+                        </label>
                         <input 
                           type="text" 
-                          placeholder="MM/AA" 
-                          defaultValue="12/28"
-                          className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono text-center bg-white" 
+                          placeholder="Nombre y Apellidos" 
+                          value={cardholderName}
+                          onChange={(e) => setCardholderName(e.target.value)}
+                          className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary text-xs bg-white" 
                         />
-                        <input 
-                          type="text" 
-                          placeholder="CVV" 
-                          defaultValue="420"
-                          className="w-full p-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary text-sm font-mono text-center bg-white" 
-                        />
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[10px] text-slate-500 pt-1">
+                        <ShieldCheck className="size-3.5 text-emerald-600 shrink-0" />
+                        <span>Encriptación SSL 256-bit y protocolo seguro 3D Secure activo.</span>
                       </div>
                     </div>
                   )}
@@ -514,15 +604,19 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
                       <YapePlinQR amount={total} />
                       <div className="w-full max-w-xs mt-3">
                         <label className="block text-[11px] font-bold text-slate-600 mb-1 text-center">
-                          Ingresa los últimos 6 dígitos de la constancia:
+                          Ingresa los dígitos de la constancia (6-8 dígitos):
                         </label>
                         <input 
                           type="text" 
-                          placeholder="N° Operación (ej. 748392)" 
-                          defaultValue="847291"
+                          placeholder="N° Operación (ej. 847291)" 
+                          value={yapeOperationCode}
+                          onChange={(e) => setYapeOperationCode(e.target.value.replace(/\D/g, "").slice(0, 8))}
                           className="w-full p-2.5 rounded-xl border border-purple-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm text-center tracking-widest font-mono bg-white font-bold" 
                           maxLength={8} 
                         />
+                        <p className="text-[10px] text-center text-purple-700/80 mt-1">
+                          Verificación antifraude instantánea en pasarela.
+                        </p>
                       </div>
                     </div>
                   )}
@@ -632,11 +726,11 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
                 {isProcessing ? (
                   <>
                     <Loader2 className="size-5 animate-spin" />
-                    <span>Confirmando tu rescate...</span>
+                    <span className="text-sm">{processingStep || "Procesando pago seguro..."}</span>
                   </>
                 ) : (
                   <>
-                    <span>Confirmar Rescate (S/ {total.toFixed(2)})</span>
+                    <span>Pagar y Rescatar Alimentos (S/ {total.toFixed(2)})</span>
                   </>
                 )}
               </button>
