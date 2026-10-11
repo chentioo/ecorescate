@@ -9,7 +9,7 @@ interface FoodCardProps {
   rescuePrice: number;
   imageUrl: string;
   pickupTime: string;
-  distance: string;
+  distance?: string;
   packsAvailable?: number;
 }
 
@@ -20,10 +20,12 @@ export function FoodCard({
   rescuePrice,
   imageUrl,
   pickupTime,
-  distance,
+  distance = "En tu zona",
   packsAvailable = 3,
 }: FoodCardProps) {
-  const discount = Math.round((1 - rescuePrice / originalPrice) * 100);
+  const discount = originalPrice > 0 
+    ? Math.round((1 - rescuePrice / originalPrice) * 100) 
+    : 50;
   const isSoldOut = packsAvailable <= 0;
 
   return (
@@ -41,7 +43,7 @@ export function FoodCard({
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
         <div className="absolute bottom-3 left-3 right-3 flex justify-between items-end">
           <span className="bg-white/95 backdrop-blur-sm text-slate-900 text-xs font-bold px-2.5 py-1 rounded-lg shadow-sm">
-            {distance}
+            {distance || "En tu zona"}
           </span>
           {isSoldOut ? (
             <span className="bg-slate-800 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md">

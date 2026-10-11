@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Leaf, User as UserIcon, LogOut, X } from "lucide-react";
+import { Menu, Leaf, User as UserIcon, LogOut, X, Store } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { useState, useEffect } from "react";
 import { usePathname } from "next/navigation";
@@ -61,6 +61,11 @@ export function Navbar() {
             <Link href="/prime" className="flex items-center gap-1.5 text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100 transition-colors border border-amber-200">
               <span>✨ Prime</span>
             </Link>
+
+            <Link href="/partner" className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition-colors border border-emerald-200">
+              <Store className="size-3.5 text-emerald-600" />
+              <span>Portal Aliados</span>
+            </Link>
             
             {/* Perfil del usuario autenticado */}
             <Link 
@@ -106,6 +111,14 @@ export function Navbar() {
             className="block px-3 py-2 rounded-xl text-base font-bold text-amber-600 bg-amber-50"
           >
             ✨ EcoRescate Prime
+          </Link>
+          <Link 
+            href="/partner" 
+            onClick={() => setMobileMenuOpen(false)}
+            className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-base font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200"
+          >
+            <Store className="size-5 text-emerald-600" />
+            <span>Portal Restaurantes Aliados</span>
           </Link>
           <Link 
             href="/profile" 
