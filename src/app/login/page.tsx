@@ -1,44 +1,25 @@
 "use client";
 
-import { Leaf, ArrowRight, Loader2, AlertCircle, Check, Sparkles } from "lucide-react";
+import { Leaf, ArrowRight, Loader2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/components/auth/AuthProvider";
-import { PRESET_AVATARS, DEFAULT_AVATAR } from "@/lib/avatars";
 
 export default function LoginPage() {
-  const [tab, setTab] = useState<"login" | "register">("login");
-  
-  // Login fields
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
-  // Register fields
-  const [registerName, setRegisterName] = useState("");
-  const [registerEmail, setRegisterEmail] = useState("");
-  const [registerPassword, setRegisterPassword] = useState("");
-  const [selectedAvatar, setSelectedAvatar] = useState(DEFAULT_AVATAR);
-
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { loginWithEmail, registerWithEmail, loginWithGoogle } = useAuth();
+  const { loginWithEmail, loginWithGoogle } = useAuth();
   const router = useRouter();
-
-  const currentAvatarObj = PRESET_AVATARS.find((a) => a.url === selectedAvatar) || PRESET_AVATARS[0];
 
   const getErrorMessage = (err: any) => {
     const code = err.code || "";
     if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") {
       return "Correo o contraseña incorrectos.";
-    }
-    if (code === "auth/email-already-in-use") {
-      return "Este correo ya está registrado. Prueba iniciando sesión.";
-    }
-    if (code === "auth/weak-password") {
-      return "La contraseña debe tener al menos 6 caracteres.";
     }
     if (code === "auth/invalid-email") {
       return "El formato del correo electrónico no es válido.";
@@ -49,10 +30,7 @@ export default function LoginPage() {
     if (code === "auth/popup-blocked") {
       return "El navegador bloqueó la ventana emergente. Por favor habilítala.";
     }
-    if (code === "auth/unauthorized-domain") {
-      return "Dominio no autorizado en Firebase. Agrega 'ecorescate-web.vercel.app' en Firebase Console (Authentication > Settings > Authorized Domains).";
-    }
-    return err.message || "Ocurrió un error. Por favor intenta nuevamente.";
+    return err.message || "Ocurrió un error al iniciar sesión.";
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -71,32 +49,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!registerName.trim()) {
-      setError("Por favor ingresa tu nombre completo.");
-      return;
-    }
-    if (registerPassword.length < 6) {
-      setError("La contraseña debe tener al menos 6 caracteres.");
-      return;
-    }
-
-    setError(null);
-    setLoading(true);
-
-    try {
-      await registerWithEmail(registerName.trim(), registerEmail.trim(), registerPassword, selectedAvatar);
-      router.push("/");
-    } catch (err: any) {
-      console.error("Register error:", err);
-      setError(getErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleAuth = async () => {
+  const handleGoogleLogin = async () => {
     setError(null);
     setGoogleLoading(true);
 
@@ -104,7 +57,7 @@ export default function LoginPage() {
       await loginWithGoogle();
       router.push("/");
     } catch (err: any) {
-      console.error("Google auth error:", err);
+      console.error("Google login error:", err);
       setError(getErrorMessage(err));
     } finally {
       setGoogleLoading(false);
@@ -112,54 +65,16 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12 pt-24">
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-6 sm:p-8 border border-slate-100">
-        
-        {/* Logo */}
-        <div className="flex justify-center mb-4">
+    <div className="min-h-screen flex items-center justify-center bg-slate-50 px-4 py-12">
+      <div className="max-w-md w-full bg-white rounded-3xl shadow-xl p-8 border border-slate-100">
+        <div className="flex justify-center mb-6">
           <div className="bg-primary p-3 rounded-2xl shadow-md shadow-primary/20">
-            <Leaf className="size-7 text-white" />
+            <Leaf className="size-8 text-white" />
           </div>
         </div>
-        
-        <h1 className="text-2xl sm:text-3xl font-extrabold text-center text-slate-900 mb-1">
-          {tab === "login" ? "Iniciar Sesión" : "Crear tu Cuenta"}
-        </h1>
-        <p className="text-center text-slate-500 text-sm mb-6">
-          {tab === "login" ? "¡Qué bueno verte de nuevo en EcoRescate!" : "Salva comida deliciosa y rescata el planeta."}
-        </p>
 
-        {/* Tab Switcher */}
-        <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl mb-6">
-          <button
-            type="button"
-            onClick={() => {
-              setTab("login");
-              setError(null);
-            }}
-            className={`text-center py-2 rounded-xl text-sm transition ${
-              tab === "login"
-                ? "font-bold text-slate-900 bg-white shadow-sm"
-                : "font-semibold text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Iniciar Sesión
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setTab("register");
-              setError(null);
-            }}
-            className={`text-center py-2 rounded-xl text-sm transition ${
-              tab === "register"
-                ? "font-bold text-slate-900 bg-white shadow-sm"
-                : "font-semibold text-slate-500 hover:text-slate-800"
-            }`}
-          >
-            Registrarse
-          </button>
-        </div>
+        <h1 className="text-3xl font-extrabold text-center text-slate-900 mb-2">Iniciar Sesión</h1>
+        <p className="text-center text-slate-500 mb-8">¡Qué bueno verte de nuevo en EcoRescate!</p>
 
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-2xl flex items-start gap-3 text-red-700 text-sm animate-shake">
@@ -168,208 +83,17 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* TAB 1: INICIAR SESIÓN */}
-        {tab === "login" ? (
-          <div>
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Correo Electrónico</label>
-                <input 
-                  type="email" 
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition text-sm"
-                  placeholder="tu@email.com"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Contraseña</label>
-                <input 
-                  type="password" 
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition text-sm"
-                  placeholder="••••••••"
-                />
-              </div>
-              
-              <button 
-                type="submit"
-                disabled={loading || googleLoading}
-                className="w-full bg-primary hover:bg-leaf-deep text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 transition flex items-center justify-center gap-2 mt-5 disabled:opacity-70 text-sm"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="size-5 animate-spin" />
-                    <span>Iniciando sesión...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Entrar a EcoRescate</span>
-                    <ArrowRight className="size-5" />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        ) : (
-          /* TAB 2: REGISTRARSE (CON SELECTOR DE AVATAR DESTACADO) */
-          <div>
-            {/* SECCIÓN DESTACADA: ELIGE TU AVATAR */}
-            <div className="bg-emerald-50/60 border border-emerald-100 rounded-2xl p-4 mb-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-1.5">
-                  <Sparkles className="size-4 text-emerald-600" />
-                  <label className="text-sm font-bold text-slate-800">
-                    1. Elige tu Avatar
-                  </label>
-                </div>
-                <span className="text-[11px] font-semibold text-emerald-700 bg-emerald-100/80 px-2 py-0.5 rounded-full">
-                  {currentAvatarObj.label}
-                </span>
-              </div>
-
-              {/* Preview del Avatar Activo */}
-              <div className="flex items-center gap-3.5 mb-3 bg-white p-2.5 rounded-xl border border-emerald-100 shadow-sm">
-                <div className="size-14 rounded-full overflow-hidden border-2 border-emerald-400 bg-emerald-50 shrink-0 shadow-sm">
-                  <img 
-                    src={selectedAvatar} 
-                    alt="Avatar elegido" 
-                    className="w-full h-full object-cover" 
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-xs font-bold text-slate-900 truncate">
-                    {currentAvatarObj.label}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Este avatar te representará en tu perfil y rescates.
-                  </p>
-                </div>
-              </div>
-
-              {/* Galería de 8 Avatares Predeterminados */}
-              <div className="grid grid-cols-4 gap-2">
-                {PRESET_AVATARS.map((avatar) => {
-                  const isSelected = selectedAvatar === avatar.url;
-                  return (
-                    <button
-                      key={avatar.id}
-                      type="button"
-                      onClick={() => setSelectedAvatar(avatar.url)}
-                      title={avatar.label}
-                      className={`flex flex-col items-center gap-1 p-1.5 rounded-xl border-2 transition-all hover:scale-105 active:scale-95 relative bg-white ${
-                        isSelected 
-                          ? "border-primary shadow-sm ring-2 ring-primary/20 bg-emerald-50/50" 
-                          : "border-slate-200 hover:border-slate-300"
-                      }`}
-                    >
-                      <div className="size-10 rounded-full overflow-hidden flex items-center justify-center bg-slate-50">
-                        <img 
-                          src={avatar.url} 
-                          alt={avatar.label} 
-                          className="w-full h-full object-cover" 
-                        />
-                      </div>
-                      <span className="text-[10px] font-semibold text-slate-700 truncate max-w-full">
-                        {avatar.label.split(" ")[0]}
-                      </span>
-                      {isSelected && (
-                        <div className="absolute -top-1 -right-1 size-4 bg-primary text-white rounded-full flex items-center justify-center text-[9px] shadow">
-                          <Check className="size-2.5 stroke-[3]" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            {/* Formulario de Registro */}
-            <form onSubmit={handleRegister} className="space-y-3.5">
-              <div className="flex items-center gap-1.5 mb-1">
-                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">
-                  2. Tus Datos Personales
-                </span>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Nombre Completo</label>
-                <input 
-                  type="text" 
-                  required
-                  value={registerName}
-                  onChange={(e) => setRegisterName(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition text-sm"
-                  placeholder="Ej. Ana García"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Correo Electrónico</label>
-                <input 
-                  type="email" 
-                  required
-                  value={registerEmail}
-                  onChange={(e) => setRegisterEmail(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition text-sm"
-                  placeholder="tu@email.com"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Contraseña</label>
-                <input 
-                  type="password" 
-                  required
-                  value={registerPassword}
-                  onChange={(e) => setRegisterPassword(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition text-sm"
-                  placeholder="Mínimo 6 caracteres"
-                />
-              </div>
-              
-              <button 
-                type="submit"
-                disabled={loading || googleLoading}
-                className="w-full bg-primary hover:bg-leaf-deep text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 transition flex items-center justify-center gap-2 mt-4 disabled:opacity-70 text-sm"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="size-5 animate-spin" />
-                    <span>Creando tu cuenta...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Registrarme con mi Avatar</span>
-                    <ArrowRight className="size-5" />
-                  </>
-                )}
-              </button>
-            </form>
-          </div>
-        )}
-
-        {/* Separador */}
-        <div className="relative flex py-4 items-center my-2">
-          <div className="flex-grow border-t border-slate-200"></div>
-          <span className="flex-shrink mx-4 text-xs uppercase tracking-wider text-slate-400 font-semibold">o también</span>
-          <div className="flex-grow border-t border-slate-200"></div>
-        </div>
-
-        {/* Google Sign In / Auth */}
+        {/* Google Sign In */}
         <button
           type="button"
-          onClick={handleGoogleAuth}
+          onClick={handleGoogleLogin}
           disabled={googleLoading || loading}
-          className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-4 rounded-xl border border-slate-200 shadow-sm transition hover:border-slate-300 disabled:opacity-60 text-sm"
+          className="w-full flex items-center justify-center gap-3 bg-white hover:bg-slate-50 text-slate-700 font-semibold py-3 px-4 rounded-xl border border-slate-200 shadow-sm transition hover:border-slate-300 disabled:opacity-60 mb-6"
         >
           {googleLoading ? (
-            <Loader2 className="size-4 animate-spin text-slate-500" />
+            <Loader2 className="size-5 animate-spin text-slate-500" />
           ) : (
-            <svg className="size-4" viewBox="0 0 24 24">
+            <svg className="size-5" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
                 d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
@@ -391,38 +115,58 @@ export default function LoginPage() {
           <span>Continuar con Google</span>
         </button>
 
-        <p className="text-center text-xs text-slate-500 mt-6">
-          {tab === "login" ? (
-            <>
-              ¿No tienes una cuenta?{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setTab("register");
-                  setError(null);
-                }}
-                className="text-primary font-bold hover:underline"
-              >
-                Regístrate y elige tu avatar
-              </button>
-            </>
-          ) : (
-            <>
-              ¿Ya tienes cuenta?{" "}
-              <button
-                type="button"
-                onClick={() => {
-                  setTab("login");
-                  setError(null);
-                }}
-                className="text-primary font-bold hover:underline"
-              >
-                Inicia sesión aquí
-              </button>
-            </>
-          )}
-        </p>
+        <div className="relative flex py-2 items-center mb-6">
+          <div className="flex-grow border-t border-slate-200"></div>
+          <span className="flex-shrink mx-4 text-xs uppercase tracking-wider text-slate-400 font-semibold">o con tu correo</span>
+          <div className="flex-grow border-t border-slate-200"></div>
+        </div>
 
+        <form onSubmit={handleLogin} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Correo Electrónico</label>
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+              placeholder="tu@email.com"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-slate-700 mb-1">Contraseña</label>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition"
+              placeholder="••••••••"
+            />
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading || googleLoading}
+            className="w-full bg-primary hover:bg-leaf-deep text-white font-bold py-3.5 rounded-xl shadow-lg shadow-primary/20 transition flex items-center justify-center gap-2 mt-6 disabled:opacity-70"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="size-5 animate-spin" />
+                <span>Iniciando sesión...</span>
+              </>
+            ) : (
+              <>
+                <span>Entrar</span>
+                <ArrowRight className="size-5" />
+              </>
+            )}
+          </button>
+        </form>
+
+        <p className="text-center text-sm text-slate-500 mt-8">
+          ¿Aún no tienes cuenta? <Link href="/register" className="text-primary font-bold hover:underline">Regístrate gratis</Link>
+        </p>
       </div>
     </div>
   );

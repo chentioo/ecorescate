@@ -74,6 +74,38 @@ export async function createOrder(params: CreateOrderParams): Promise<Order> {
     createdAt: new Date().toISOString(),
   };
 
+  // 1. Intentar creación atómica segura en el Backend
+  if (typeof window !== "undefined") {
+    try {
+      const res = await fetch("/api/orders/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(params),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success && data.order) {
+        const serverOrder: Order = data.order;
+        // Backup local para acceso instantáneo
+        try {
+          const existing = JSON.parse(localStorage.getItem(`eco_orders_${params.userId}`) || "[]");
+          localStorage.setItem(`eco_orders_${params.userId}`, JSON.stringify([serverOrder, ...existing]));
+          localStorage.setItem(`eco_last_order`, JSON.stringify(serverOrder));
+        } catch (e) {}
+        return serverOrder;
+      } else if (!res.ok && data.error) {
+        throw new Error(data.error);
+      }
+    } catch (apiError: any) {
+      // Si el servidor arrojó un error de negocio (ej. stock insuficiente), lanzarlo al usuario
+      if (apiError.message && apiError.message.includes("Stock insuficiente")) {
+        throw apiError;
+      }
+      console.warn("Backend API warning, running client fallback:", apiError);
+    }
+  }
+
+  // 2. Fallback de cliente si la API no está disponible o estamos offline
   try {
     // 1. Guardar orden en Firestore
     const orderRef = doc(db, "orders", orderId);
@@ -239,3 +271,27 @@ export async function markOrderCompleted(orderId: string, userId: string): Promi
     } catch (e) {}
   }
 }
+
+export async function verifyOrderByCode(code: string, restaurantName?: string): Promise<{ success: boolean; message?: string; error?: string; order?: Order; alreadyCompleted?: boolean }> {
+  try {
+    const res = await fetch("/api/orders/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ code, restaurantName }),
+    });
+    const data = await res.json();
+    return data;
+  } catch (err: any) {
+    return { success: false, error: err.message || "Error al conectar con el servidor" };
+  }
+}
+
+export async function getOrderByCode(code: string): Promise<Order | null> {
+  try {
+    const res = await fetch(`/api/orders/verify?code=${encodeURIComponent(code)}`);
+    const data = await res.json();
+    if (data.success && data.order) return data.order;
+  } catch (e) {}
+  return null;
+}
+
