@@ -22,12 +22,17 @@ import {
   Minus,
   Check,
   DollarSign,
-  Tag
+  Tag,
+  Trash2,
+  Pause,
+  Play
 } from "lucide-react";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 import { verifyOrderByCode, getOrderByCode } from "@/lib/orders";
 import { Order } from "@/types";
+import { doc, updateDoc, deleteDoc, getDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
 
 const ALLIED_RESTAURANTS = [
   { id: "1", name: "La Lucha Sanguchería", logo: "/logos/LaluchaLogo.jpg", address: "Av. Diagonal 308, Miraflores", defaultImage: "/restaurants/LALUCHA.jpg", category: "Sándwiches y Criollo" },
@@ -105,6 +110,71 @@ export default function PartnerPortalPage() {
       loadPacks();
     }
   }, [selectedRestaurant.id, activeTab]);
+
+  // Modificar stock en tiempo real (+ o -) en Firestore y Restaurante
+  const handleUpdatePackStock = async (packId: string, currentStock: number, delta: number) => {
+    const newStock = Math.max(0, currentStock + delta);
+    const newStatus = newStock === 0 ? "sold_out" : "available";
+
+    setRestaurantPacks((prev) =>
+      prev.map((p) => p.id === packId ? { ...p, packsAvailable: newStock, status: newStatus } : p)
+    );
+
+    try {
+      const packRef = doc(db, "packs", packId);
+      await updateDoc(packRef, {
+        packsAvailable: newStock,
+        status: newStatus,
+      });
+
+      const restRef = doc(db, "restaurants", selectedRestaurant.id);
+      const restSnap = await getDoc(restRef);
+      if (restSnap.exists()) {
+        const restData = restSnap.data();
+        const curRestStock = Number(restData.packsAvailable ?? 0);
+        await updateDoc(restRef, {
+          packsAvailable: Math.max(0, curRestStock + delta),
+        });
+      }
+    } catch (e) {
+      console.error("Error al actualizar stock de pack:", e);
+    }
+  };
+
+  // Pausar o Reactivar Pack
+  const handleTogglePackStatus = async (packId: string, currentStatus: string, currentStock: number) => {
+    const isCurrentlyActive = currentStatus !== "sold_out" && currentStock > 0;
+    const nextStatus = isCurrentlyActive ? "sold_out" : "available";
+    const nextStock = nextStatus === "available" && currentStock === 0 ? 3 : currentStock;
+
+    setRestaurantPacks((prev) =>
+      prev.map((p) => p.id === packId ? { ...p, status: nextStatus, packsAvailable: nextStock } : p)
+    );
+
+    try {
+      const packRef = doc(db, "packs", packId);
+      await updateDoc(packRef, {
+        status: nextStatus,
+        packsAvailable: nextStock,
+      });
+    } catch (e) {
+      console.error("Error al alternar estado del pack:", e);
+    }
+  };
+
+  // Eliminar Pack
+  const handleDeletePack = async (packId: string, packTitle: string) => {
+    if (!confirm(`¿Estás seguro de eliminar el pack "${packTitle}"?`)) return;
+
+    setRestaurantPacks((prev) => prev.filter((p) => p.id !== packId));
+
+    try {
+      const packRef = doc(db, "packs", packId);
+      await deleteDoc(packRef);
+    } catch (e) {
+      console.error("Error al eliminar pack:", e);
+    }
+  };
 
   // Buscar pedido por código
   const handleSearch = async (e?: React.FormEvent) => {
@@ -752,42 +822,109 @@ export default function PartnerPortalPage() {
               </div>
             ) : (
               <div className="space-y-3">
-                {restaurantPacks.map((pack) => (
-                  <div
-                    key={pack.id}
-                    className="bg-slate-800/90 rounded-2xl p-4 border border-slate-700 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:border-slate-600 transition"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="size-14 rounded-xl overflow-hidden bg-slate-900 border border-slate-700 shrink-0">
-                        <img src={pack.imageUrl || "/restaurants/LALUCHA.jpg"} alt={pack.packName} className="w-full h-full object-cover" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-bold text-white text-sm">{pack.packName}</h4>
-                          <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
-                            (pack.packsAvailable ?? 0) > 0 
-                              ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                              : "bg-red-500/20 text-red-300 border border-red-500/30"
-                          }`}>
-                            {(pack.packsAvailable ?? 0) > 0 ? `${pack.packsAvailable} disponibles` : "Agotado"}
-                          </span>
+                {restaurantPacks.map((pack) => {
+                  const currentStock = Number(pack.packsAvailable ?? 0);
+                  const isAvailable = pack.status !== "sold_out" && currentStock > 0;
+
+                  return (
+                    <div
+                      key={pack.id}
+                      className="bg-slate-800/90 rounded-2xl p-4 border border-slate-700 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:border-slate-600 transition"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="size-16 rounded-xl overflow-hidden bg-slate-900 border border-slate-700 shrink-0">
+                          <img src={pack.imageUrl || "/restaurants/LALUCHA.jpg"} alt={pack.packName} className="w-full h-full object-cover" />
                         </div>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          Recojo: <strong className="text-slate-200">{pack.pickupTime}</strong> • S/ {pack.rescuePrice?.toFixed(2)}{" "}
-                          <span className="line-through text-slate-500 text-[11px]">S/ {pack.originalPrice?.toFixed(2)}</span>
-                        </p>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-bold text-white text-sm">{pack.packName}</h4>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              isAvailable
+                                ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
+                                : "bg-red-500/20 text-red-300 border border-red-500/30"
+                            }`}>
+                              {isAvailable ? `${currentStock} disponibles` : "Agotado / Pausado"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 mt-0.5">
+                            Recojo: <strong className="text-slate-200">{pack.pickupTime}</strong> • S/ {pack.rescuePrice?.toFixed(2)}{" "}
+                            <span className="line-through text-slate-500 text-[11px]">S/ {pack.originalPrice?.toFixed(2)}</span>
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Controles de Gestión: Stock (+ / -), Pausar, Eliminar y Ver */}
+                      <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-3 md:pt-0 border-slate-700/60">
+                        {/* Selector de Stock +/- */}
+                        <div className="flex items-center bg-slate-900 border border-slate-700 rounded-xl p-1 gap-1">
+                          <button
+                            type="button"
+                            onClick={() => handleUpdatePackStock(pack.id, currentStock, -1)}
+                            disabled={currentStock <= 0}
+                            title="Disminuir raciones disponibles"
+                            className="size-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition disabled:opacity-40"
+                          >
+                            <Minus className="size-3" />
+                          </button>
+                          <span className="text-xs font-mono font-bold text-white px-2 min-w-[28px] text-center">
+                            {currentStock}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => handleUpdatePackStock(pack.id, currentStock, 1)}
+                            title="Aumentar raciones disponibles"
+                            className="size-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white flex items-center justify-center transition"
+                          >
+                            <Plus className="size-3" />
+                          </button>
+                        </div>
+
+                        {/* Botón Pausar / Activar */}
+                        <button
+                          type="button"
+                          onClick={() => handleTogglePackStatus(pack.id, pack.status, currentStock)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 border ${
+                            isAvailable
+                              ? "bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border-amber-500/30"
+                              : "bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border-emerald-500/30"
+                          }`}
+                          title={isAvailable ? "Pausar pack (marcar agotado)" : "Activar pack para comensales"}
+                        >
+                          {isAvailable ? (
+                            <>
+                              <Pause className="size-3" />
+                              <span>Pausar</span>
+                            </>
+                          ) : (
+                            <>
+                              <Play className="size-3" />
+                              <span>Activar</span>
+                            </>
+                          )}
+                        </button>
+
+                        {/* Botón Eliminar Pack */}
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePack(pack.id, pack.packName)}
+                          className="p-1.5 rounded-xl bg-slate-900 hover:bg-red-500/20 text-slate-400 hover:text-red-400 border border-slate-700 transition"
+                          title="Eliminar este pack de comida"
+                        >
+                          <Trash2 className="size-4" />
+                        </button>
+
+                        {/* Link Ver Checkout */}
+                        <Link
+                          href={`/checkout/${pack.id}`}
+                          className="bg-slate-900 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1"
+                        >
+                          <span>Checkout</span>
+                          <ExternalLink className="size-3" />
+                        </Link>
                       </div>
                     </div>
-
-                    <Link
-                      href={`/checkout/${pack.id}`}
-                      className="bg-slate-900 hover:bg-slate-700 text-emerald-400 border border-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 self-end sm:self-auto"
-                    >
-                      <span>Ver Checkout</span>
-                      <ExternalLink className="size-3" />
-                    </Link>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

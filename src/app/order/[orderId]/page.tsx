@@ -22,27 +22,55 @@ import {
   Wallet,
   Banknote,
   Copy,
-  Check
+  Check,
+  X,
+  AlertTriangle,
+  Loader2
 } from "lucide-react";
-import { getOrderById } from "@/lib/orders";
+import { getOrderById, cancelOrder } from "@/lib/orders";
 import { Order } from "@/types";
 import { OrderNotificationCard } from "@/components/notifications/OrderNotificationCard";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function OrderSuccessPage({ params }: { params: Promise<{ orderId: string }> }) {
   const resolvedParams = use(params);
   const orderId = resolvedParams.orderId;
   const searchParams = useSearchParams();
   const deliveryType = searchParams.get("type") || "pickup";
+  const { user } = useAuth();
   
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [cancelModalOpen, setCancelModalOpen] = useState(false);
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelFeedback, setCancelFeedback] = useState<string | null>(null);
 
   const handleCopyCode = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {
       navigator.clipboard.writeText(displayCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2200);
+    }
+  };
+
+  const handleCancelOrder = async () => {
+    if (!orderId) return;
+    setIsCancelling(true);
+    try {
+      const res = await cancelOrder(orderId, user?.uid || order?.userId || "");
+      if (res.success) {
+        setOrder((prev) => prev ? { ...prev, status: "cancelled" } : null);
+        setCancelFeedback("¡Reserva cancelada con éxito! El stock ha sido devuelto a la tienda.");
+        setCancelModalOpen(false);
+      } else {
+        alert(res.error || "No se pudo cancelar la orden.");
+      }
+    } catch (e: any) {
+      console.error("Error al cancelar orden:", e);
+      alert(e.message || "Error al cancelar la orden.");
+    } finally {
+      setIsCancelling(false);
     }
   };
 
@@ -347,6 +375,20 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderId
             }} 
           />
 
+          {/* Alerta de Cancelación */}
+          {cancelFeedback && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-2xl text-xs font-semibold flex items-center gap-2">
+              <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+              <span>{cancelFeedback}</span>
+            </div>
+          )}
+
+          {order?.status === "cancelled" && (
+            <div className="bg-rose-50 border border-rose-200 text-rose-800 p-3.5 rounded-2xl text-xs text-center font-bold">
+              ❌ Esta reserva fue cancelada. El stock del pack fue devuelto al restaurante.
+            </div>
+          )}
+
           {/* Botones de Acción */}
           <div className="space-y-2.5 pt-2">
             <Link 
@@ -363,7 +405,60 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderId
             >
               Seguir explorando ofertas
             </Link>
+
+            {/* Botón Cancelar Reserva (solo si está confirmada y no cancelada/completada) */}
+            {order?.status !== "cancelled" && order?.status !== "completed" && (
+              <button
+                type="button"
+                onClick={() => setCancelModalOpen(true)}
+                className="w-full text-center text-rose-600 hover:text-rose-700 hover:bg-rose-50 font-bold py-2.5 rounded-xl transition-colors text-xs border border-rose-200/80"
+              >
+                Cancelar reserva
+              </button>
+            )}
           </div>
+
+          {/* Modal de Confirmación de Cancelación */}
+          {cancelModalOpen && (
+            <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+              <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in">
+                <div className="size-12 rounded-2xl bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
+                  <AlertTriangle className="size-6" />
+                </div>
+                <div className="text-center">
+                  <h3 className="font-extrabold text-slate-900 text-lg">¿Cancelar esta reserva?</h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    El stock reservado ({displayQuantity}x {displayPack}) se devolverá inmediatamente al restaurante para que otro comensal pueda rescatarlo.
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setCancelModalOpen(false)}
+                    disabled={isCancelling}
+                    className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition"
+                  >
+                    No, mantener
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleCancelOrder}
+                    disabled={isCancelling}
+                    className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isCancelling ? (
+                      <>
+                        <Loader2 className="size-3.5 animate-spin" />
+                        <span>Cancelando...</span>
+                      </>
+                    ) : (
+                      <span>Sí, cancelar</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
 
         </div>
 

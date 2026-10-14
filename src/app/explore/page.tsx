@@ -127,7 +127,7 @@ const FALLBACK_PACKS = [
   }
 ];
 
-const FALLBACK_RESTAURANTS = [
+export const FALLBACK_RESTAURANTS = [
   { id: "1", name: "La Lucha Sanguchería", category: "Sándwiches y Criollo", rating: 4.8, reviews: 2150, distance: "0.8 km", packsAvailable: 3, logoUrl: "/restaurants/LALUCHA.jpg", location: { lat: -12.122114, lng: -77.030999 } },
   { id: "2", name: "Punto Azul", category: "Pescados y Mariscos", rating: 4.7, reviews: 1840, distance: "1.2 km", packsAvailable: 1, logoUrl: "/restaurants/PUNTOAZUL.jpg", location: { lat: -12.120563, lng: -77.027063 } },
   { id: "3", name: "Siete Sopas", category: "Caldos y Sopas", rating: 4.6, reviews: 3200, distance: "2.1 km", packsAvailable: 0, logoUrl: "/restaurants/SieteSopas.jpg", location: { lat: -12.086316, lng: -77.034503 } },

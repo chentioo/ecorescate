@@ -1,6 +1,11 @@
-import { Star, MapPin, Package } from "lucide-react";
+"use client";
+
+import { Star, MapPin, Package, Heart } from "lucide-react";
+import { useAuth } from "@/components/auth/AuthProvider";
+import { useState, useEffect } from "react";
 
 interface RestaurantCardProps {
+  id?: string;
   name: string;
   category: string;
   rating: number;
@@ -12,6 +17,7 @@ interface RestaurantCardProps {
 }
 
 export function RestaurantCard({
+  id,
   name,
   category,
   rating,
@@ -21,14 +27,64 @@ export function RestaurantCard({
   logoUrl,
   supportsTupperware = true,
 }: RestaurantCardProps) {
+  const { user, profile, updateUserProfile } = useAuth();
+  const [isFavorite, setIsFavorite] = useState(false);
   const hasPacks = packsAvailable > 0;
 
+  useEffect(() => {
+    if (!id) return;
+    let favList: string[] = profile?.favoriteRestaurantIds || [];
+    if (typeof window !== "undefined" && favList.length === 0) {
+      try {
+        favList = JSON.parse(localStorage.getItem("ecorescate_favorites") || "[]");
+      } catch (e) {}
+    }
+    setIsFavorite(favList.includes(id));
+  }, [id, profile?.favoriteRestaurantIds]);
+
+  const handleToggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (!id) return;
+
+    let currentFavs: string[] = profile?.favoriteRestaurantIds || [];
+    if (typeof window !== "undefined" && currentFavs.length === 0) {
+      try {
+        currentFavs = JSON.parse(localStorage.getItem("ecorescate_favorites") || "[]");
+      } catch (e) {}
+    }
+
+    let nextFavs: string[];
+    const nextState = !isFavorite;
+    if (nextState) {
+      nextFavs = [...currentFavs.filter((item) => item !== id), id];
+    } else {
+      nextFavs = currentFavs.filter((item) => item !== id);
+    }
+
+    setIsFavorite(nextState);
+
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ecorescate_favorites", JSON.stringify(nextFavs));
+      } catch (e) {}
+    }
+
+    if (user) {
+      try {
+        await updateUserProfile({ favoriteRestaurantIds: nextFavs });
+      } catch (e) {
+        console.error("Error al guardar favoritos:", e);
+      }
+    }
+  };
+
   return (
-    <div className={`apple-card rounded-2xl p-4 flex items-center gap-4 border border-slate-200/80 bg-white group transition-all duration-300 ${
+    <div className={`apple-card rounded-2xl p-4 flex items-center gap-4 border border-slate-200/80 bg-white group transition-all duration-300 relative ${
       hasPacks ? 'hover:border-primary/40' : 'opacity-65 grayscale-[30%]'
     }`}>
       {/* Avatar / Initials */}
-      <div className={`size-14 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 shadow-inner overflow-hidden transition-transform duration-500 ease-out group-hover:scale-[1.04] ${
+      <div className={`size-14 rounded-xl flex items-center justify-center text-lg font-bold shrink-0 shadow-inner overflow-hidden transition-transform duration-500 ease-out group-hover:scale-[1.04] relative ${
         hasPacks ? 'bg-primary/10 text-primary' : 'bg-slate-100 text-slate-400'
       }`}>
         {logoUrl ? (
@@ -59,6 +115,18 @@ export function RestaurantCard({
             <MapPin className="size-3 mr-1 opacity-70" />
             {distance}
           </div>
+          {id && (
+            <button
+              type="button"
+              onClick={handleToggleFavorite}
+              className={`p-1 rounded-full transition-transform active:scale-90 hover:bg-slate-50 ${
+                isFavorite ? "text-rose-500" : "text-slate-300 hover:text-slate-500"
+              }`}
+              title={isFavorite ? "Eliminar de favoritos" : "Guardar en favoritos"}
+            >
+              <Heart className={`size-3.5 ${isFavorite ? "fill-rose-500 text-rose-500" : ""}`} />
+            </button>
+          )}
         </div>
       </div>
 

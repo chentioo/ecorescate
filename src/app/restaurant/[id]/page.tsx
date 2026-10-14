@@ -1,6 +1,10 @@
-import { MapPin, Clock, Star, ArrowLeft, Leaf } from "lucide-react";
+"use client";
+
+import { use, useState, useEffect } from "react";
+import { MapPin, Clock, Star, ArrowLeft, Leaf, Heart, Share2, Check } from "lucide-react";
 import Link from "next/link";
 import { FoodCard } from "@/components/ui/FoodCard";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 const MOCK_DB: Record<string, any> = {
   "1": {
@@ -129,24 +133,134 @@ const getRestaurantData = (id: string) => {
   };
 };
 
-export default async function RestaurantPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
+export default function RestaurantPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const id = resolvedParams.id;
   const data = getRestaurantData(id);
+  const { user, profile, updateUserProfile } = useAuth();
+
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
+  const [copiedLink, setCopiedLink] = useState(false);
+
+  // Sincronizar estado de favoritos desde perfil y localStorage
+  useEffect(() => {
+    let favList: string[] = profile?.favoriteRestaurantIds || [];
+    if (typeof window !== "undefined" && favList.length === 0) {
+      try {
+        favList = JSON.parse(localStorage.getItem("ecorescate_favorites") || "[]");
+      } catch (e) {}
+    }
+    setIsFavorite(favList.includes(id));
+  }, [id, profile?.favoriteRestaurantIds]);
+
+  const handleToggleFavorite = async () => {
+    let currentFavs: string[] = profile?.favoriteRestaurantIds || [];
+    if (typeof window !== "undefined" && currentFavs.length === 0) {
+      try {
+        currentFavs = JSON.parse(localStorage.getItem("ecorescate_favorites") || "[]");
+      } catch (e) {}
+    }
+
+    let nextFavs: string[];
+    const nextState = !isFavorite;
+    if (nextState) {
+      nextFavs = [...currentFavs.filter((item) => item !== id), id];
+      setFeedbackToast(`¡${data.name} añadido a tus favoritos!`);
+    } else {
+      nextFavs = currentFavs.filter((item) => item !== id);
+      setFeedbackToast(`Eliminado de tus favoritos`);
+    }
+
+    setIsFavorite(nextState);
+    setTimeout(() => setFeedbackToast(null), 2500);
+
+    // Guardar en localStorage
+    if (typeof window !== "undefined") {
+      try {
+        localStorage.setItem("ecorescate_favorites", JSON.stringify(nextFavs));
+      } catch (e) {}
+    }
+
+    // Guardar en Firestore si el usuario está autenticado
+    if (user) {
+      try {
+        await updateUserProfile({ favoriteRestaurantIds: nextFavs });
+      } catch (e) {
+        console.error("Error al guardar favoritos:", e);
+      }
+    }
+  };
+
+  const handleShare = async () => {
+    if (typeof window === "undefined") return;
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `EcoRescate - ${data.name}`,
+          text: `¡Mira los packs de rescate con hasta 60% de descuento en ${data.name}!`,
+          url,
+        });
+        return;
+      } catch (e) {}
+    }
+
+    if (navigator.clipboard) {
+      await navigator.clipboard.writeText(url);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2200);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50 pb-20">
+      {/* Toast de Favorito / Copiado */}
+      {feedbackToast && (
+        <div className="fixed top-20 right-4 z-50 bg-slate-900 text-white text-xs font-bold px-4 py-2.5 rounded-2xl shadow-xl flex items-center gap-2 animate-bounce">
+          <Heart className="size-4 text-rose-500 fill-rose-500" />
+          <span>{feedbackToast}</span>
+        </div>
+      )}
+
       {/* Cover Image */}
       <div className="relative h-64 md:h-80 w-full">
         <div className="absolute inset-0 bg-slate-900/40 z-10" />
         <img src={data.coverUrl} alt={data.name} className="w-full h-full object-cover" />
         
-        <div className="absolute top-20 left-4 sm:left-8 z-20 animate-apple-fade-in">
+        {/* Barra Superior Flotante: Volver, Favorito y Compartir */}
+        <div className="absolute top-20 left-4 right-4 sm:left-8 sm:right-8 z-20 flex justify-between items-center animate-apple-fade-in">
           <Link 
             href="/explore" 
             className="apple-btn bg-white/20 hover:bg-white/40 backdrop-blur-md p-2.5 rounded-full inline-flex items-center justify-center text-white shadow-sm"
+            title="Volver"
           >
             <ArrowLeft className="size-5" />
           </Link>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleShare}
+              className="apple-btn bg-white/20 hover:bg-white/40 backdrop-blur-md p-2.5 rounded-full inline-flex items-center justify-center text-white shadow-sm"
+              title="Compartir restaurante"
+            >
+              {copiedLink ? <Check className="size-5 text-emerald-400" /> : <Share2 className="size-5" />}
+            </button>
+
+            <button
+              type="button"
+              onClick={handleToggleFavorite}
+              className={`apple-btn backdrop-blur-md p-2.5 rounded-full inline-flex items-center justify-center shadow-sm transition-all ${
+                isFavorite 
+                  ? "bg-rose-500 text-white ring-2 ring-white/50" 
+                  : "bg-white/20 hover:bg-white/40 text-white"
+              }`}
+              title={isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"}
+            >
+              <Heart className={`size-5 ${isFavorite ? "fill-white text-white" : ""}`} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -161,7 +275,19 @@ export default async function RestaurantPage({ params }: { params: Promise<{ id:
                 </span>
                 <span className="text-sm font-medium text-slate-500">{data.category}</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{data.name}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{data.name}</h1>
+                <button
+                  type="button"
+                  onClick={handleToggleFavorite}
+                  className={`p-1.5 rounded-full transition-transform active:scale-90 ${
+                    isFavorite ? "text-rose-500" : "text-slate-300 hover:text-slate-500"
+                  }`}
+                  title={isFavorite ? "Quitar de favoritos" : "Guardar en favoritos"}
+                >
+                  <Heart className={`size-6 ${isFavorite ? "fill-rose-500" : ""}`} />
+                </button>
+              </div>
             </div>
             
             <div className="flex items-center gap-1 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-xl border border-amber-200/70 shadow-xs">

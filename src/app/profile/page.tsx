@@ -2,11 +2,9 @@
 
 import { 
   Leaf, 
-  Award, 
   MapPin, 
   PackageOpen, 
   ChevronRight, 
-  Settings, 
   CreditCard, 
   Salad, 
   Bell, 
@@ -20,14 +18,23 @@ import {
   Sparkles,
   QrCode,
   Clock,
-  Store,
   CheckCircle2,
-  ExternalLink,
   TreePine,
   Smartphone,
   Droplets,
   Sprout,
-  Zap
+  Zap,
+  RotateCcw,
+  MessageCircle,
+  Heart,
+  Phone,
+  Camera,
+  X,
+  AlertCircle,
+  ExternalLink,
+  ShieldCheck,
+  Lock,
+  Wallet
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -35,29 +42,123 @@ import { useAuth } from "@/components/auth/AuthProvider";
 import { useState, useEffect } from "react";
 import { PRESET_AVATARS, DEFAULT_AVATAR, getCleanAvatar } from "@/lib/avatars";
 import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { db, auth } from "@/lib/firebase";
 import { getUserOrders, markOrderCompleted } from "@/lib/orders";
+import { getWhatsAppShareUrl } from "@/lib/notifications";
 import { Order } from "@/types";
+import { FALLBACK_RESTAURANTS } from "@/app/explore/page";
+import { RestaurantCard } from "@/components/ui/RestaurantCard";
+
+// Switch reutilizable estilo iOS/Apple
+function AppleSwitch({
+  checked,
+  onChange,
+  disabled = false,
+  label,
+  id,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  disabled?: boolean;
+  label?: string;
+  id?: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      id={id}
+      disabled={disabled}
+      onClick={onChange}
+      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 ${
+        checked ? "bg-emerald-500" : "bg-slate-200"
+      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+    >
+      <span
+        aria-hidden="true"
+        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow-md ring-0 transition duration-200 ease-in-out ${
+          checked ? "translate-x-5" : "translate-x-0"
+        }`}
+      />
+    </button>
+  );
+}
 
 export default function ProfilePage() {
   const { user, profile, loading, logout, updateUserProfile } = useAuth();
+  const router = useRouter();
   const [imgError, setImgError] = useState(false);
-  const [isEditingName, setIsEditingName] = useState(false);
-  const [nameInput, setNameInput] = useState("");
-  const [savingAvatar, setSavingAvatar] = useState<string | null>(null);
-  const [savedSuccess, setSavedSuccess] = useState(false);
 
-  // Estados para pedidos / órdenes del usuario
+  // Estados de Modales
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [isDietaryModalOpen, setIsDietaryModalOpen] = useState(false);
+
+  // Campos de edición de perfil
+  const [editName, setEditName] = useState("");
+  const [editPhone, setEditPhone] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editDietary, setEditDietary] = useState("Sin restricciones");
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+
+  // Avatares
+  const [savingAvatar, setSavingAvatar] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Seguridad / Recuperación de contraseña
+  const [passwordResetLoading, setPasswordResetLoading] = useState(false);
+  const [passwordResetNotice, setPasswordResetNotice] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+
+  // Pedidos y Pestañas
   const [orders, setOrders] = useState<Order[]>([]);
   const [loadingOrders, setLoadingOrders] = useState(true);
-  const [orderTab, setOrderTab] = useState<"active" | "history">("active");
+  const [activeTab, setActiveTab] = useState<"active" | "history" | "favorites">("active");
 
   const displayName = profile?.name || user?.displayName || user?.email?.split("@")[0] || "Usuario";
   const userEmail = profile?.email || user?.email || "";
+  const userPhone = profile?.phone || "No especificado";
+  const userAddress = profile?.address || "Lima, Perú";
+  const userDietary = profile?.dietaryPreference || "Sin restricciones";
   const photoURL = getCleanAvatar(profile?.photoURL || user?.photoURL);
   const isPrime = profile?.isPrime ?? false;
 
-  // Cálculo de métricas agregadas desde órdenes y perfil
+  // Favoritos
+  const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    let favList: string[] = profile?.favoriteRestaurantIds || [];
+    if (typeof window !== "undefined" && favList.length === 0) {
+      try {
+        favList = JSON.parse(localStorage.getItem("ecorescate_favorites") || "[]");
+      } catch (e) {}
+    }
+    setFavoriteIds(favList);
+  }, [profile?.favoriteRestaurantIds]);
+
+  // Cargar valores iniciales en los formularios
+  useEffect(() => {
+    if (profile || user) {
+      setEditName(profile?.name || user?.displayName || "");
+      setEditPhone(profile?.phone || "");
+      setEditAddress(profile?.address || "");
+      setEditDietary(profile?.dietaryPreference || "Sin restricciones");
+    }
+  }, [profile, user]);
+
+  // Toast feedback helper
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  // Cálculo de métricas
   const ordersTotalCo2 = orders.reduce((sum, o) => sum + (o.co2SavedKg || 0), 0);
   const ordersTotalMoney = orders.reduce((sum, o) => sum + (o.moneySaved || 0), 0);
   const ordersTotalPacks = orders.reduce((sum, o) => sum + (o.quantity || 1), 0);
@@ -66,7 +167,7 @@ export default function ProfilePage() {
   const moneySaved = Number(Math.max(profile?.moneySaved || 0, ordersTotalMoney).toFixed(2));
   const rescuedCount = Math.max(profile?.rescuedCount || 0, ordersTotalPacks);
 
-  // Gamificación de Rango Ecológico ("Semilla", "Brote Verde", "Guardián Amazónico")
+  // Rango Ecológico
   let currentRank = "Semilla";
   let nextRank = "Brote Verde";
   let rankProgress = 0;
@@ -93,7 +194,6 @@ export default function ProfilePage() {
     rankDescription = "Iniciando tu impacto positivo salvando comida fresca en Lima.";
   }
 
-  // Traducción de CO2 ahorrado a equivalencias visuales del mundo real
   const treesMadreDeDios = (co2Saved > 0)
     ? Number((co2Saved / 10).toFixed(1))
     : Number((rescuedCount * 0.3).toFixed(1));
@@ -114,7 +214,7 @@ export default function ProfilePage() {
     }
   }, [user?.uid]);
 
-  // Sincronizar automáticamente hacia Firestore si las órdenes suman más que el perfil registrado
+  // Sincronizar hacia Firestore si las órdenes suman más que el perfil registrado
   useEffect(() => {
     if (user?.uid && orders.length > 0) {
       const calculatedCo2 = Number(orders.reduce((sum, o) => sum + (o.co2SavedKg || 0), 0).toFixed(1));
@@ -139,16 +239,9 @@ export default function ProfilePage() {
     }
   }, [user?.uid, orders, profile]);
 
-  // Reset error flag whenever photoURL changes
   useEffect(() => {
     setImgError(false);
   }, [photoURL]);
-
-  useEffect(() => {
-    if (displayName) {
-      setNameInput(displayName);
-    }
-  }, [displayName]);
 
   if (loading) {
     return (
@@ -159,16 +252,40 @@ export default function ProfilePage() {
   }
 
   if (!user) {
-    return null; // El AuthProvider redirige automáticamente a /login
+    return null;
   }
 
+  // 1. Guardar Edición de Perfil
+  const handleSaveProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editName.trim()) return;
+
+    setIsSavingProfile(true);
+    try {
+      await updateUserProfile({
+        name: editName.trim(),
+        phone: editPhone.trim(),
+        address: editAddress.trim(),
+        dietaryPreference: editDietary,
+      });
+      setIsEditProfileOpen(false);
+      showToast("¡Perfil guardado correctamente en tu cuenta!");
+    } catch (err) {
+      console.error("Error al guardar perfil:", err);
+      showToast("Hubo un error al actualizar los datos.");
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  // 2. Seleccionar Avatar
   const handleSelectAvatar = async (avatarUrl: string, avatarId: string) => {
     setSavingAvatar(avatarId);
     setImgError(false);
     try {
       await updateUserProfile({ photoURL: avatarUrl });
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 2500);
+      showToast("¡Avatar actualizado con éxito!");
+      setIsAvatarModalOpen(false);
     } catch (e) {
       console.error("Error al guardar avatar:", e);
     } finally {
@@ -176,18 +293,53 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSaveName = async () => {
-    if (!nameInput.trim()) return;
+  // 3. Toggle de Notificaciones por Correo
+  const handleToggleEmail = async () => {
+    const cur = profile?.emailNotifications ?? true;
+    const nextVal = !cur;
+    await updateUserProfile({ emailNotifications: nextVal });
+    showToast(nextVal ? "Notificaciones por correo activadas" : "Notificaciones por correo desactivadas");
+  };
+
+  // 4. Toggle de Alertas por WhatsApp
+  const handleToggleWhatsApp = async () => {
+    const cur = profile?.whatsappNotifications ?? true;
+    const nextVal = !cur;
+    await updateUserProfile({ whatsappNotifications: nextVal });
+    showToast(nextVal ? "Alertas por WhatsApp activadas" : "Alertas por WhatsApp desactivadas");
+  };
+
+  // 5. Toggle de Llevar Táper por Defecto
+  const handleToggleDefaultContainer = async () => {
+    const cur = profile?.defaultBringContainer ?? false;
+    const nextVal = !cur;
+    await updateUserProfile({ defaultBringContainer: nextVal });
+    showToast(nextVal ? "¡Llevar táper propio activado por defecto! 🌱" : "Táper propio desactivado por defecto");
+  };
+
+  // 6. Cambiar Contraseña vía Correo
+  const handleSendPasswordReset = async () => {
+    if (!user?.email) return;
+    setPasswordResetLoading(true);
+    setPasswordResetNotice(null);
     try {
-      await updateUserProfile({ name: nameInput.trim() });
-      setIsEditingName(false);
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 2500);
-    } catch (e) {
-      console.error("Error al guardar nombre:", e);
+      await sendPasswordResetEmail(auth, user.email);
+      setPasswordResetNotice({
+        type: "success",
+        text: `¡Enlace enviado! Revisa tu bandeja de entrada en ${user.email} para actualizar tu contraseña.`,
+      });
+      showToast("Correo de restablecimiento enviado");
+    } catch (err: any) {
+      setPasswordResetNotice({
+        type: "error",
+        text: err.message || "No se pudo enviar el correo de recuperación.",
+      });
+    } finally {
+      setPasswordResetLoading(false);
     }
   };
 
+  // 7. Completar Orden
   const handleCompleteOrder = async (orderId: string) => {
     if (!user?.uid) return;
     try {
@@ -195,37 +347,56 @@ export default function ProfilePage() {
       setOrders((prev) =>
         prev.map((o) => (o.id === orderId ? { ...o, status: "completed" } : o))
       );
-      setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 2500);
+      showToast("¡Rescate marcado como recogido!");
     } catch (e) {
       console.error("Error al completar rescate:", e);
     }
   };
 
+  // 8. Compartir por WhatsApp
+  const handleShareOrderWhatsApp = (ord: Order) => {
+    const url = getWhatsAppShareUrl(ord);
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
+
+  // 9. Cerrar Sesión
+  const handleLogout = async () => {
+    try {
+      await logout();
+      router.push("/login");
+    } catch (e) {
+      console.error("Error al cerrar sesión:", e);
+    }
+  };
+
   const activeOrders = orders.filter((o) => o.status !== "completed" && o.status !== "cancelled");
   const pastOrders = orders.filter((o) => o.status === "completed" || o.status === "cancelled");
+  const favoriteRestaurants = FALLBACK_RESTAURANTS.filter((r) => favoriteIds.includes(r.id));
 
   return (
     <div className="pt-24 pb-16 min-h-screen bg-slate-50">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        <div className="flex justify-between items-center mb-8">
+        {/* Cabecera y Toast */}
+        <div className="flex justify-between items-center mb-6">
           <div>
-            <h1 className="text-3xl font-extrabold text-slate-900">Mi Perfil</h1>
-            <p className="text-slate-500 text-sm mt-0.5">Gestiona tu identidad y tus rescates ecológicos</p>
+            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Mi Perfil</h1>
+            <p className="text-slate-500 text-sm mt-0.5">Gestiona tu identidad, tus preferencias y tus rescates ecológicos</p>
           </div>
-          {savedSuccess && (
-            <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 px-3.5 py-1.5 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-sm animate-bounce">
-              <Check className="size-3.5" />
-              <span>¡Perfil actualizado!</span>
+          {toastMessage && (
+            <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-md animate-apple-fade-in">
+              <Check className="size-4 text-emerald-600 stroke-[2.5]" />
+              <span>{toastMessage}</span>
             </div>
           )}
         </div>
 
-        {/* User Card */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-          <div className="relative group">
-            <div className="size-24 rounded-full overflow-hidden border-4 border-emerald-100 shadow-md bg-slate-50 flex items-center justify-center">
+        {/* Tarjeta Principal de Usuario */}
+        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-200/80 mb-8 flex flex-col sm:flex-row items-center sm:items-start gap-6 relative overflow-hidden">
+          
+          {/* Avatar con botón para abrir selector */}
+          <div className="relative group shrink-0">
+            <div className="size-24 sm:size-28 rounded-full overflow-hidden border-4 border-emerald-100 shadow-md bg-slate-50 flex items-center justify-center">
               {!imgError ? (
                 <img 
                   src={photoURL} 
@@ -241,128 +412,372 @@ export default function ProfilePage() {
                 />
               )}
             </div>
-            <div className="absolute -bottom-1 -right-1 bg-white p-1 rounded-full shadow border border-slate-200">
-              <Sparkles className="size-4 text-amber-500" />
-            </div>
+            
+            {/* Botón flotante para cambiar foto */}
+            <button
+              type="button"
+              onClick={() => setIsAvatarModalOpen(true)}
+              className="absolute bottom-0 right-0 bg-primary hover:bg-leaf-deep text-white p-2 rounded-full shadow-lg border-2 border-white transition-all transform hover:scale-110 cursor-pointer"
+              title="Cambiar avatar"
+            >
+              <Camera className="size-4" />
+            </button>
           </div>
 
+          {/* Información del Usuario */}
           <div className="flex-1 text-center sm:text-left">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-3">
-              {isEditingName ? (
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    value={nameInput}
-                    onChange={(e) => setNameInput(e.target.value)}
-                    className="border border-slate-300 rounded-xl px-3 py-1 text-lg font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Tu nombre..."
-                  />
-                  <button
-                    onClick={handleSaveName}
-                    className="bg-primary hover:bg-leaf-deep text-white px-3 py-1.5 rounded-xl text-xs font-bold transition"
-                  >
-                    Guardar
-                  </button>
-                  <button
-                    onClick={() => setIsEditingName(false)}
-                    className="text-slate-400 hover:text-slate-600 text-xs px-2 py-1"
-                  >
-                    Cancelar
-                  </button>
-                </div>
-              ) : (
-                <>
-                  <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-2">
-                    {displayName}
-                  </h2>
-                  <button
-                    onClick={() => setIsEditingName(true)}
-                    title="Editar nombre"
-                    className="text-slate-400 hover:text-primary transition p-1"
-                  >
-                    <Pencil className="size-4" />
-                  </button>
-                </>
-              )}
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                {displayName}
+              </h2>
 
               {isPrime && (
-                <span className="bg-amber-100 text-amber-600 text-xs px-2.5 py-1 rounded-full font-bold flex items-center gap-1 border border-amber-200">
-                  <Crown className="size-3" /> Prime
+                <span className="bg-amber-100 text-amber-700 text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1 border border-amber-200 shadow-xs">
+                  <Crown className="size-3.5 text-amber-500 fill-amber-500" /> Miembro Prime
                 </span>
               )}
             </div>
 
-            <p className="text-slate-500 flex items-center justify-center sm:justify-start gap-1.5 mt-1.5 text-sm">
-              <Mail className="size-3.5 text-slate-400" /> {userEmail}
-            </p>
-            <p className="text-slate-400 flex items-center justify-center sm:justify-start gap-1 mt-0.5 text-xs">
-              <MapPin className="size-3.5" /> Lima, Perú
-            </p>
-          </div>
-        </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3 text-xs text-slate-600">
+              <p className="flex items-center justify-center sm:justify-start gap-1.5">
+                <Mail className="size-3.5 text-slate-400" />
+                <span className="truncate">{userEmail}</span>
+              </p>
+              <p className="flex items-center justify-center sm:justify-start gap-1.5">
+                <Phone className="size-3.5 text-slate-400" />
+                <span>{userPhone}</span>
+              </p>
+              <p className="flex items-center justify-center sm:justify-start gap-1.5">
+                <MapPin className="size-3.5 text-slate-400" />
+                <span>{userAddress}</span>
+              </p>
+              <p className="flex items-center justify-center sm:justify-start gap-1.5">
+                <Salad className="size-3.5 text-slate-400" />
+                <span>Dieta: <strong>{userDietary}</strong></span>
+              </p>
+            </div>
 
-        {/* Sección: Selector de Avatar Predeterminado */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <div>
-              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
-                <span>Elige tu Avatar</span>
-                <span className="bg-primary/10 text-primary text-xs px-2 py-0.5 rounded-full font-semibold">8 Predeterminados</span>
-              </h3>
-              <p className="text-slate-500 text-xs mt-0.5">Selecciona el avatar que más te guste para representarte en EcoRescate</p>
+            <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
+              <button
+                type="button"
+                onClick={() => setIsEditProfileOpen(true)}
+                className="inline-flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+              >
+                <Pencil className="size-3.5" />
+                <span>Editar Perfil</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="inline-flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-2 rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                <Sparkles className="size-3.5 text-amber-500" />
+                <span>Elegir Avatar</span>
+              </button>
             </div>
           </div>
-
-          <div className="grid grid-cols-4 sm:grid-cols-8 gap-3">
-            {PRESET_AVATARS.map((avatar) => {
-              const isSelected = photoURL === avatar.url;
-              const isSaving = savingAvatar === avatar.id;
-
-              return (
-                <button
-                  key={avatar.id}
-                  onClick={() => handleSelectAvatar(avatar.url, avatar.id)}
-                  disabled={isSaving}
-                  title={avatar.label}
-                  className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border-2 transition-all hover:scale-105 active:scale-95 group relative ${
-                    isSelected 
-                      ? "border-primary bg-primary/5 shadow-md shadow-primary/20 ring-2 ring-primary/20" 
-                      : "border-slate-100 hover:border-slate-300 bg-slate-50"
-                  }`}
-                >
-                  <div className="size-12 rounded-full overflow-hidden bg-white shadow-sm flex items-center justify-center border border-slate-200">
-                    {isSaving ? (
-                      <Loader2 className="size-5 animate-spin text-primary" />
-                    ) : (
-                      <img 
-                        src={avatar.url} 
-                        alt={avatar.label} 
-                        className="w-full h-full object-cover"
-                      />
-                    )}
-                  </div>
-                  
-                  <span className="text-[10px] font-semibold text-slate-700 truncate max-w-full">
-                    {avatar.label.split(" ")[0]}
-                  </span>
-
-                  {isSelected && (
-                    <div className="absolute -top-1.5 -right-1.5 size-4 bg-primary text-white rounded-full flex items-center justify-center text-[10px] shadow">
-                      ✓
-                    </div>
-                  )}
-                </button>
-              );
-            })}
-          </div>
         </div>
 
-        {/* SECCIÓN: MIS RESCATES DE COMIDA */}
-        <div className="bg-white rounded-3xl p-6 shadow-sm border border-slate-200 mb-8">
+        {/* Modal: Editar Perfil */}
+        {isEditProfileOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-apple-fade-in relative">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+                  <Pencil className="size-4 text-primary" />
+                  <span>Editar Perfil</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsEditProfileOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveProfile} className="space-y-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Nombre Completo</label>
+                  <input
+                    type="text"
+                    required
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    placeholder="Tu nombre y apellido"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Teléfono / WhatsApp</label>
+                  <input
+                    type="tel"
+                    value={editPhone}
+                    onChange={(e) => setEditPhone(e.target.value)}
+                    placeholder="Ej. +51 987 654 321"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Distrito / Dirección habitual</label>
+                  <input
+                    type="text"
+                    value={editAddress}
+                    onChange={(e) => setEditAddress(e.target.value)}
+                    placeholder="Ej. Miraflores, Lima"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary font-medium"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Preferencia Alimentaria</label>
+                  <select
+                    value={editDietary}
+                    onChange={(e) => setEditDietary(e.target.value)}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-white font-medium"
+                  >
+                    <option value="Sin restricciones">Sin restricciones</option>
+                    <option value="Vegetariano">Vegetariano</option>
+                    <option value="Vegano">Vegano</option>
+                    <option value="Sin gluten">Sin gluten / Celiaco</option>
+                    <option value="Pescetariano">Pescetariano</option>
+                    <option value="Bajo en calorías">Bajo en calorías</option>
+                  </select>
+                </div>
+
+                <div className="flex gap-2.5 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditProfileOpen(false)}
+                    className="flex-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSavingProfile}
+                    className="flex-1 bg-primary hover:bg-leaf-deep text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                  >
+                    {isSavingProfile ? (
+                      <>
+                        <Loader2 className="size-3.5 animate-spin" />
+                        <span>Guardando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Check className="size-3.5 stroke-[2.5]" />
+                        <span>Guardar Cambios</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Selector de Avatar (8 avatares predeterminados) */}
+        {isAvatarModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-apple-fade-in relative">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <div>
+                  <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+                    <Sparkles className="size-4 text-amber-500" />
+                    <span>Elige tu Avatar</span>
+                  </h3>
+                  <p className="text-slate-500 text-xs mt-0.5">8 avatares oficiales para tu perfil de EcoRescate</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <div className="grid grid-cols-4 gap-3 py-2">
+                {PRESET_AVATARS.map((avatar) => {
+                  const isSelected = photoURL === avatar.url;
+                  const isSaving = savingAvatar === avatar.id;
+
+                  return (
+                    <button
+                      key={avatar.id}
+                      type="button"
+                      onClick={() => handleSelectAvatar(avatar.url, avatar.id)}
+                      disabled={isSaving}
+                      className={`flex flex-col items-center gap-1.5 p-2 rounded-2xl border-2 transition-all hover:scale-105 active:scale-95 group relative cursor-pointer ${
+                        isSelected 
+                          ? "border-primary bg-primary/5 shadow-md ring-2 ring-primary/20" 
+                          : "border-slate-100 hover:border-slate-300 bg-slate-50"
+                      }`}
+                    >
+                      <div className="size-14 rounded-full overflow-hidden bg-white shadow-sm flex items-center justify-center border border-slate-200">
+                        {isSaving ? (
+                          <Loader2 className="size-5 animate-spin text-primary" />
+                        ) : (
+                          <img 
+                            src={avatar.url} 
+                            alt={avatar.label} 
+                            className="w-full h-full object-cover"
+                          />
+                        )}
+                      </div>
+                      
+                      <span className="text-[11px] font-bold text-slate-700 truncate max-w-full">
+                        {avatar.label.split(" ")[0]}
+                      </span>
+
+                      {isSelected && (
+                        <div className="absolute -top-1.5 -right-1.5 size-5 bg-primary text-white rounded-full flex items-center justify-center text-xs font-bold shadow">
+                          ✓
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsAvatarModalOpen(false)}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Métodos de Pago Informativo */}
+        {isPaymentModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-apple-fade-in relative">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+                  <CreditCard className="size-5 text-blue-600" />
+                  <span>Métodos de Pago</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsPaymentModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <div className="space-y-3 py-2 text-xs text-slate-600">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3">
+                  <div className="size-9 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-black">
+                    Y
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900">Yape & Plin</p>
+                    <p className="text-[11px] text-slate-500">QR y confirmación bancaria inmediata en checkout</p>
+                  </div>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Activo</span>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3">
+                  <div className="size-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-black">
+                    <CreditCard className="size-4" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900">Tarjetas Visa / Mastercard / Amex</p>
+                    <p className="text-[11px] text-slate-500">Procesamiento seguro con tokenización SSL</p>
+                  </div>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Activo</span>
+                </div>
+
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-2xl flex items-center gap-3">
+                  <div className="size-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-black">
+                    💵
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-bold text-slate-900">Pago en Local (Contraentrega)</p>
+                    <p className="text-[11px] text-slate-500">Pagas en el mostrador al retirar tu pack sorpresa</p>
+                  </div>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full">Activo</span>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsPaymentModalOpen(false)}
+                className="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-xl text-xs transition"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Modal: Preferencias Alimentarias */}
+        {isDietaryModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-apple-fade-in relative">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-100">
+                <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+                  <Salad className="size-5 text-emerald-600" />
+                  <span>Preferencia Alimentaria</span>
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setIsDietaryModalOpen(false)}
+                  className="text-slate-400 hover:text-slate-600 p-1 rounded-lg"
+                >
+                  <X className="size-5" />
+                </button>
+              </div>
+
+              <div className="space-y-2 py-1">
+                {[
+                  "Sin restricciones",
+                  "Vegetariano",
+                  "Vegano",
+                  "Sin gluten",
+                  "Pescetariano",
+                  "Bajo en calorías"
+                ].map((pref) => {
+                  const isSelected = userDietary === pref;
+                  return (
+                    <button
+                      key={pref}
+                      type="button"
+                      onClick={async () => {
+                        await updateUserProfile({ dietaryPreference: pref });
+                        setIsDietaryModalOpen(false);
+                        showToast(`Preferencia actualizada a: ${pref}`);
+                      }}
+                      className={`w-full flex items-center justify-between p-3 rounded-xl border text-xs font-bold transition text-left cursor-pointer ${
+                        isSelected 
+                          ? "border-primary bg-primary/10 text-primary" 
+                          : "border-slate-200 hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      <span>{pref}</span>
+                      {isSelected && <Check className="size-4 text-primary stroke-[2.5]" />}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECCIÓN: MIS RESCATES Y FAVORITOS (3 TABS) */}
+        <div className="bg-white rounded-3xl p-6 sm:p-7 shadow-sm border border-slate-200/80 mb-8">
           <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-3 mb-6">
             <div>
-              <h3 className="text-xl font-bold text-slate-900 flex items-center gap-2">
-                <span>Mis Rescates de Comida</span>
+              <h3 className="text-xl font-black text-slate-900 flex items-center gap-2">
+                <span>Mis Rescates & Favoritos</span>
                 {activeOrders.length > 0 && (
                   <span className="bg-primary text-white text-xs px-2.5 py-0.5 rounded-full font-bold animate-pulse">
                     {activeOrders.length} {activeOrders.length === 1 ? "activo" : "activos"}
@@ -370,17 +785,17 @@ export default function ProfilePage() {
                 )}
               </h3>
               <p className="text-slate-500 text-xs mt-0.5">
-                Packs reservados listos para recoger en el restaurante o entregados
+                Packs reservados listos para recoger, historial de compras y tus restaurantes favoritos
               </p>
             </div>
 
-            {/* Tabs Activos vs Historial */}
-            <div className="flex bg-slate-100 p-1 rounded-xl self-start sm:self-auto">
+            {/* Selector de Pestañas: Activos, Historial, Mis Favoritos */}
+            <div className="flex bg-slate-100 p-1 rounded-2xl self-start sm:self-auto">
               <button
                 type="button"
-                onClick={() => setOrderTab("active")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                  orderTab === "active"
+                onClick={() => setActiveTab("active")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  activeTab === "active"
                     ? "bg-white text-slate-900 shadow-sm"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
@@ -389,19 +804,32 @@ export default function ProfilePage() {
               </button>
               <button
                 type="button"
-                onClick={() => setOrderTab("history")}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
-                  orderTab === "history"
+                onClick={() => setActiveTab("history")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition cursor-pointer ${
+                  activeTab === "history"
                     ? "bg-white text-slate-900 shadow-sm"
                     : "text-slate-500 hover:text-slate-800"
                 }`}
               >
                 Historial ({pastOrders.length})
               </button>
+              <button
+                type="button"
+                onClick={() => setActiveTab("favorites")}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
+                  activeTab === "favorites"
+                    ? "bg-white text-slate-900 shadow-sm"
+                    : "text-slate-500 hover:text-slate-800"
+                }`}
+              >
+                <Heart className="size-3 text-rose-500 fill-rose-500" />
+                <span>Favoritos ({favoriteIds.length})</span>
+              </button>
             </div>
           </div>
 
-          {orderTab === "active" ? (
+          {/* TAB 1: ACTIVOS */}
+          {activeTab === "active" && (
             activeOrders.length === 0 ? (
               <div className="text-center py-8 border-2 border-dashed border-slate-100 rounded-2xl">
                 <PackageOpen className="size-12 text-slate-300 mx-auto mb-2" />
@@ -421,10 +849,10 @@ export default function ProfilePage() {
                 {activeOrders.map((ord) => (
                   <div
                     key={ord.id}
-                    className="border border-emerald-100 bg-emerald-50/40 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 hover:shadow-sm transition"
+                    className="border border-emerald-100 bg-emerald-50/40 rounded-2xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 hover:shadow-sm transition"
                   >
                     <div className="flex items-center gap-3.5">
-                      <div className="size-14 rounded-xl overflow-hidden bg-white border border-emerald-200 shrink-0">
+                      <div className="size-14 rounded-xl overflow-hidden bg-white border border-emerald-200 shrink-0 shadow-xs">
                         <img
                           src={ord.packImageUrl || "/restaurants/LALUCHA.jpg"}
                           alt={ord.packName}
@@ -450,18 +878,41 @@ export default function ProfilePage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2 w-full sm:w-auto justify-end border-t sm:border-t-0 pt-2 sm:pt-0 border-emerald-100">
+                    <div className="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end border-t md:border-t-0 pt-3 md:pt-0 border-emerald-100">
+                      {/* Ver Comprobante */}
                       <Link
-                        href={`/order/${ord.id}?type=${ord.deliveryMethod}`}
-                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm"
+                        href={`/order/${ord.id}?type=${ord.deliveryMethod || "pickup"}`}
+                        className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-800 border border-slate-200 px-3 py-2 rounded-xl text-xs font-bold transition shadow-xs"
                       >
                         <QrCode className="size-3.5 text-primary" />
-                        <span>Ver QR</span>
+                        <span>Ver comprobante</span>
                       </Link>
+
+                      {/* Repetir Pedido */}
+                      <Link
+                        href={`/checkout/${ord.packId}`}
+                        className="flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-2 rounded-xl text-xs font-bold transition"
+                      >
+                        <RotateCcw className="size-3.5" />
+                        <span>Repetir</span>
+                      </Link>
+
+                      {/* Compartir WhatsApp */}
+                      <button
+                        type="button"
+                        onClick={() => handleShareOrderWhatsApp(ord)}
+                        className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
+                        title="Compartir por WhatsApp"
+                      >
+                        <MessageCircle className="size-3.5" />
+                        <span>WhatsApp</span>
+                      </button>
+
+                      {/* Marcar Recogido */}
                       <button
                         type="button"
                         onClick={() => handleCompleteOrder(ord.id)}
-                        className="flex items-center gap-1.5 bg-primary hover:bg-leaf-deep text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow-sm"
+                        className="flex items-center gap-1.5 bg-primary hover:bg-leaf-deep text-white px-3 py-2 rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                       >
                         <CheckCircle2 className="size-3.5" />
                         <span>Recogido</span>
@@ -471,9 +922,12 @@ export default function ProfilePage() {
                 ))}
               </div>
             )
-          ) : (
+          )}
+
+          {/* TAB 2: HISTORIAL */}
+          {activeTab === "history" && (
             pastOrders.length === 0 ? (
-              <div className="text-center py-6 text-slate-400 text-xs">
+              <div className="text-center py-8 text-slate-400 text-xs">
                 Aún no tienes rescates completados en tu historial.
               </div>
             ) : (
@@ -481,10 +935,10 @@ export default function ProfilePage() {
                 {pastOrders.map((ord) => (
                   <div
                     key={ord.id}
-                    className="border border-slate-200 bg-white rounded-2xl p-3.5 flex items-center justify-between gap-3 text-xs"
+                    className="border border-slate-200 bg-white rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs hover:border-slate-300 transition"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-lg overflow-hidden bg-slate-100 shrink-0">
+                      <div className="size-11 rounded-xl overflow-hidden bg-slate-100 shrink-0">
                         <img
                           src={ord.packImageUrl || "/restaurants/LALUCHA.jpg"}
                           alt={ord.packName}
@@ -492,14 +946,83 @@ export default function ProfilePage() {
                         />
                       </div>
                       <div>
-                        <p className="font-bold text-slate-900">{ord.packName} - {ord.restaurantName}</p>
-                        <p className="text-slate-400 text-[11px]">Pagado: S/ {ord.totalPrice?.toFixed(2)} • Ahorraste S/ {ord.moneySaved?.toFixed(2)}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-bold text-slate-900 text-sm">{ord.packName} - {ord.restaurantName}</p>
+                          <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                            ord.status === "cancelled" 
+                              ? "bg-rose-100 text-rose-800" 
+                              : "bg-emerald-100 text-emerald-800"
+                          }`}>
+                            {ord.status === "cancelled" ? "Cancelado" : "Completado"}
+                          </span>
+                        </div>
+                        <p className="text-slate-400 text-[11px] mt-0.5">
+                          Pagado: S/ {ord.totalPrice?.toFixed(2)} • Ahorro: S/ {ord.moneySaved?.toFixed(2)} • {ord.pickupTime}
+                        </p>
                       </div>
                     </div>
-                    <span className="bg-emerald-50 text-emerald-700 font-bold px-2.5 py-1 rounded-full text-[11px] flex items-center gap-1 border border-emerald-200">
-                      <Check className="size-3" /> Rescate Completado
-                    </span>
+
+                    <div className="flex items-center gap-2 self-end sm:self-auto">
+                      <Link
+                        href={`/order/${ord.id}?type=${ord.deliveryMethod || "pickup"}`}
+                        className="bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 px-3 py-1.5 rounded-xl font-bold transition text-[11px] flex items-center gap-1"
+                      >
+                        <QrCode className="size-3 text-primary" />
+                        <span>Ver comprobante</span>
+                      </Link>
+
+                      <Link
+                        href={`/checkout/${ord.packId}`}
+                        className="bg-primary/10 hover:bg-primary/20 text-primary px-3 py-1.5 rounded-xl font-bold transition text-[11px] flex items-center gap-1"
+                      >
+                        <RotateCcw className="size-3" />
+                        <span>Repetir</span>
+                      </Link>
+
+                      <button
+                        type="button"
+                        onClick={() => handleShareOrderWhatsApp(ord)}
+                        className="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 px-2.5 py-1.5 rounded-xl font-bold transition text-[11px] flex items-center gap-1"
+                      >
+                        <MessageCircle className="size-3" />
+                      </button>
+                    </div>
                   </div>
+                ))}
+              </div>
+            )
+          )}
+
+          {/* TAB 3: MIS FAVORITOS */}
+          {activeTab === "favorites" && (
+            favoriteRestaurants.length === 0 ? (
+              <div className="text-center py-8 border-2 border-dashed border-slate-100 rounded-2xl">
+                <Heart className="size-12 text-slate-300 mx-auto mb-2" />
+                <p className="text-sm font-bold text-slate-700">Aún no tienes restaurantes favoritos guardados</p>
+                <p className="text-xs text-slate-400 mt-1 max-w-sm mx-auto">
+                  Toca el corazón en cualquier restaurante de EcoRescate para guardarlo aquí y acceder rápido a sus packs.
+                </p>
+                <Link
+                  href="/explore"
+                  className="inline-flex items-center gap-1.5 mt-4 bg-primary hover:bg-leaf-deep text-white px-4 py-2 rounded-xl text-xs font-bold transition shadow-sm"
+                >
+                  Explorar Restaurantes
+                </Link>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {favoriteRestaurants.map((restaurant) => (
+                  <RestaurantCard
+                    key={restaurant.id}
+                    id={restaurant.id}
+                    name={restaurant.name}
+                    category={restaurant.category}
+                    rating={restaurant.rating}
+                    reviews={restaurant.reviews}
+                    distance={restaurant.distance}
+                    packsAvailable={restaurant.packsAvailable}
+                    logoUrl={restaurant.logoUrl}
+                  />
                 ))}
               </div>
             )
@@ -626,7 +1149,6 @@ export default function ProfilePage() {
           </div>
 
           <div className="grid sm:grid-cols-3 gap-4">
-            {/* Árboles en Madre de Dios */}
             <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/70 flex flex-col justify-between">
               <div className="flex items-center gap-2 mb-2">
                 <div className="size-9 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
@@ -644,7 +1166,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Cargas de Smartphone */}
             <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/70 flex flex-col justify-between">
               <div className="flex items-center gap-2 mb-2">
                 <div className="size-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
@@ -662,7 +1183,6 @@ export default function ProfilePage() {
               </div>
             </div>
 
-            {/* Agua Dulce Preservada */}
             <div className="bg-slate-50/80 rounded-2xl p-4 border border-slate-200/70 flex flex-col justify-between">
               <div className="flex items-center gap-2 mb-2">
                 <div className="size-9 rounded-xl bg-cyan-100 text-cyan-700 flex items-center justify-center shrink-0">
@@ -682,75 +1202,191 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* Settings Menu */}
-        <h3 className="text-lg font-bold text-slate-900 mb-4">Configuración de Cuenta</h3>
-        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-sm">
+        {/* SETTINGS MENU: PREFERENCIAS Y AJUSTES DE CUENTA TOTALMENTE FUNCIONALES */}
+        <h3 className="text-lg font-bold text-slate-900 mb-4 tracking-tight">Configuración de Cuenta & Preferencias</h3>
+        <div className="bg-white border border-slate-200/90 rounded-3xl overflow-hidden shadow-sm divide-y divide-slate-100">
           
-          <Link href="/prime" className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer group">
-            <div className="size-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Crown className="size-5" />
+          {/* Switch 1: Notificaciones por correo */}
+          <div className="flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/60 transition">
+            <div className="flex items-center gap-3.5">
+              <div className="size-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center">
+                <Bell className="size-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm">Notificaciones por Correo</h4>
+                <p className="text-xs text-slate-500">Recibe confirmaciones de pedido y avisos de stock</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-900">Suscripción Prime</h4>
-              <p className="text-sm text-slate-500">{isPrime ? "Activa - Delivery Ecológico Ilimitado" : "Gestionar plan y beneficios"}</p>
+            <AppleSwitch
+              checked={profile?.emailNotifications ?? true}
+              onChange={handleToggleEmail}
+              label="Notificaciones por Correo"
+              id="switch-email-notifications"
+            />
+          </div>
+
+          {/* Switch 2: Alertas por WhatsApp */}
+          <div className="flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/60 transition">
+            <div className="flex items-center gap-3.5">
+              <div className="size-10 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                <MessageCircle className="size-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm">Alertas por WhatsApp</h4>
+                <p className="text-xs text-slate-500">Comprobantes y recordatorios directos a tu teléfono</p>
+              </div>
             </div>
-            <ChevronRight className="size-5 text-slate-300" />
+            <AppleSwitch
+              checked={profile?.whatsappNotifications ?? true}
+              onChange={handleToggleWhatsApp}
+              label="Alertas por WhatsApp"
+              id="switch-whatsapp-notifications"
+            />
+          </div>
+
+          {/* Switch 3: Llevar mi propio táper ecológico por defecto */}
+          <div className="flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/60 transition">
+            <div className="flex items-center gap-3.5">
+              <div className="size-10 rounded-xl bg-leaf-soft text-leaf-deep flex items-center justify-center">
+                <Leaf className="size-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm">Llevar mi propio táper ecológico 🌱</h4>
+                <p className="text-xs text-slate-500">Marcar automáticamente esta opción en todos tus checkouts</p>
+              </div>
+            </div>
+            <AppleSwitch
+              checked={profile?.defaultBringContainer ?? false}
+              onChange={handleToggleDefaultContainer}
+              label="Llevar mi propio táper por defecto"
+              id="switch-default-container"
+            />
+          </div>
+
+          {/* Fila: Preferencias Alimentarias */}
+          <div 
+            onClick={() => setIsDietaryModalOpen(true)}
+            className="flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/60 transition cursor-pointer group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="size-10 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Salad className="size-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm">Preferencia Alimentaria</h4>
+                <p className="text-xs text-slate-500">Actual: <strong className="text-slate-800">{userDietary}</strong></p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-primary transition-colors">
+              <span>Modificar</span>
+              <ChevronRight className="size-4" />
+            </div>
+          </div>
+
+          {/* Fila: Suscripción Prime */}
+          <Link 
+            href="/prime" 
+            className="flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/60 transition cursor-pointer group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="size-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <Crown className="size-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm">Membresía EcoRescate Prime</h4>
+                <p className="text-xs text-slate-500">
+                  {isPrime 
+                    ? `Activa (${profile?.primePlan === "annual" ? "Plan Anual" : "Plan Mensual"}) - Delivery Gratis` 
+                    : "Obtén entregas ecológicas ilimitadas y descuentos"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-primary transition-colors">
+              <span>{isPrime ? "Gestionar" : "Suscribirse"}</span>
+              <ChevronRight className="size-4" />
+            </div>
           </Link>
 
-          <div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer group">
-            <div className="size-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <CreditCard className="size-5" />
+          {/* Fila: Métodos de Pago */}
+          <div 
+            onClick={() => setIsPaymentModalOpen(true)}
+            className="flex items-center justify-between p-4 sm:p-5 hover:bg-slate-50/60 transition cursor-pointer group"
+          >
+            <div className="flex items-center gap-3.5">
+              <div className="size-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center group-hover:scale-105 transition-transform">
+                <CreditCard className="size-5" />
+              </div>
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm">Métodos de Pago</h4>
+                <p className="text-xs text-slate-500">Yape, Plin, Tarjetas y Pago en local</p>
+              </div>
             </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-900">Métodos de Pago</h4>
-              <p className="text-sm text-slate-500">Tarjetas, Yape y Plin</p>
+            <div className="flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-primary transition-colors">
+              <span>Consultar</span>
+              <ChevronRight className="size-4" />
             </div>
-            <ChevronRight className="size-5 text-slate-300" />
           </div>
 
-          <div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer group">
-            <div className="size-10 rounded-xl bg-leaf-soft text-leaf-deep flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Salad className="size-5" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-900">Preferencias Alimenticias</h4>
-              <p className="text-sm text-slate-500">Vegano, sin gluten, alergias</p>
-            </div>
-            <ChevronRight className="size-5 text-slate-300" />
-          </div>
+          {/* Fila: Seguridad de Cuenta - Cambiar Contraseña */}
+          <div className="p-4 sm:p-5 hover:bg-slate-50/60 transition space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3.5">
+                <div className="size-10 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center">
+                  <ShieldCheck className="size-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">Seguridad de la Cuenta</h4>
+                  <p className="text-xs text-slate-500">Restablece tu contraseña mediante correo electrónico</p>
+                </div>
+              </div>
 
-          <div className="flex items-center gap-4 p-4 border-b border-slate-100 hover:bg-slate-50 transition cursor-pointer group">
-            <div className="size-10 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Bell className="size-5" />
+              <button
+                type="button"
+                onClick={handleSendPasswordReset}
+                disabled={passwordResetLoading}
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {passwordResetLoading ? (
+                  <>
+                    <Loader2 className="size-3 animate-spin text-slate-600" />
+                    <span>Enviando...</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="size-3 text-slate-500" />
+                    <span>Cambiar contraseña</span>
+                  </>
+                )}
+              </button>
             </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-900">Notificaciones</h4>
-              <p className="text-sm text-slate-500">Alertas de rescate cercanas</p>
-            </div>
-            <ChevronRight className="size-5 text-slate-300" />
-          </div>
 
-          <div className="flex items-center gap-4 p-4 hover:bg-slate-50 transition cursor-pointer group">
-            <div className="size-10 rounded-xl bg-slate-100 text-slate-600 flex items-center justify-center group-hover:scale-110 transition-transform">
-              <Shield className="size-5" />
-            </div>
-            <div className="flex-1">
-              <h4 className="font-bold text-slate-900">Seguridad y Privacidad</h4>
-              <p className="text-sm text-slate-500">Contraseña y datos personales</p>
-            </div>
-            <ChevronRight className="size-5 text-slate-300" />
+            {passwordResetNotice && (
+              <div className={`p-3 rounded-2xl text-xs font-semibold flex items-center gap-2 ${
+                passwordResetNotice.type === "success"
+                  ? "bg-emerald-50 text-emerald-800 border border-emerald-200"
+                  : "bg-rose-50 text-rose-800 border border-rose-200"
+              }`}>
+                {passwordResetNotice.type === "success" ? (
+                  <CheckCircle2 className="size-4 text-emerald-600 shrink-0" />
+                ) : (
+                  <AlertCircle className="size-4 text-rose-600 shrink-0" />
+                )}
+                <span>{passwordResetNotice.text}</span>
+              </div>
+            )}
           </div>
 
         </div>
 
-        {/* Logout Button */}
+        {/* Botón de Cerrar Sesión */}
         <div className="mt-8 flex justify-center">
           <button 
-            onClick={logout}
-            className="flex items-center gap-2 text-red-500 hover:text-red-600 font-semibold px-6 py-3 rounded-xl hover:bg-red-50 transition"
+            type="button"
+            onClick={handleLogout}
+            className="flex items-center gap-2 text-rose-600 hover:text-rose-700 font-bold px-6 py-3 rounded-2xl hover:bg-rose-50 border border-rose-200/80 transition-colors shadow-xs cursor-pointer text-sm"
           >
-            <LogOut className="size-5" />
-            Cerrar Sesión
+            <LogOut className="size-4" />
+            <span>Cerrar Sesión</span>
           </button>
         </div>
 

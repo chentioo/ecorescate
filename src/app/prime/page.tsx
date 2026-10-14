@@ -40,6 +40,9 @@ export default function PrimePage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [isStudent, setIsStudent] = useState(false);
 
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelFeedback, setCancelFeedback] = useState<string | null>(null);
+
   // Ya es Prime?
   const alreadyPrime = profile?.isPrime ?? false;
 
@@ -91,6 +94,7 @@ export default function PrimePage() {
         primePlan: isAnnual ? "annual" : "monthly",
         primePrice: finalPrice,
         primePaymentMethod: paymentMethod,
+        primeSince: new Date().toISOString(),
         primeSubscribedAt: serverTimestamp(),
       }, { merge: true });
 
@@ -114,8 +118,30 @@ export default function PrimePage() {
     }
   };
 
+  const handleCancelPrime = async () => {
+    if (!user) return;
+    setIsProcessing(true);
+    try {
+      const userRef = doc(db, "users", user.uid);
+      await setDoc(userRef, {
+        isPrime: false,
+        primePlan: null,
+        primeSince: null,
+      }, { merge: true });
+
+      await refreshUserProfile();
+      setIsSubscribed(false);
+      setShowCancelConfirm(false);
+      setCancelFeedback("Tu suscripción Prime ha sido cancelada correctamente.");
+    } catch (e) {
+      console.error("Error al cancelar membresía Prime:", e);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Pantalla de Éxito / Ya Suscrito
-  if (isSubscribed || alreadyPrime) {
+  if ((isSubscribed || alreadyPrime) && !cancelFeedback) {
     return (
       <div className="min-h-screen bg-slate-50 pt-28 pb-20 flex flex-col items-center justify-center px-4 text-center">
         <div className="w-24 h-24 bg-amber-100 rounded-3xl flex items-center justify-center mb-6 border-4 border-amber-300 shadow-lg shadow-amber-200/50 animate-bounce">
@@ -137,6 +163,12 @@ export default function PrimePage() {
             <span className="font-bold text-emerald-600">S/ 0.00 Ilimitado</span>
           </div>
           <div className="flex justify-between items-center text-slate-700">
+            <span>Plan:</span>
+            <span className="font-bold text-slate-900 capitalize">
+              {profile?.primePlan === "annual" ? "Anual (Ahorro 20%)" : "Mensual"}
+            </span>
+          </div>
+          <div className="flex justify-between items-center text-slate-700">
             <span>Insignia de Perfil:</span>
             <span className="font-bold text-amber-600 flex items-center gap-1">
               <Crown className="size-3.5" /> Corona Prime
@@ -148,7 +180,7 @@ export default function PrimePage() {
           </div>
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <div className="flex flex-col sm:flex-row gap-3.5 justify-center max-w-md w-full">
           <Link 
             href="/explore" 
             className="bg-primary hover:bg-leaf-deep text-white font-bold px-8 py-3.5 rounded-xl shadow-lg shadow-primary/20 transition flex items-center justify-center gap-2"
@@ -162,6 +194,59 @@ export default function PrimePage() {
             Ver en Mi Perfil
           </Link>
         </div>
+
+        {/* Botón de Cancelación de Membresía */}
+        <div className="mt-8">
+          <button
+            type="button"
+            onClick={() => setShowCancelConfirm(true)}
+            className="text-xs text-rose-600 hover:text-rose-700 underline font-semibold transition"
+          >
+            Cancelar membresía Prime
+          </button>
+        </div>
+
+        {/* Modal de Confirmación de Cancelación de Prime */}
+        {showCancelConfirm && (
+          <div className="fixed inset-0 z-50 bg-slate-900/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-200 space-y-4 animate-in fade-in">
+              <div className="size-12 rounded-2xl bg-amber-100 text-amber-600 flex items-center justify-center mx-auto">
+                <Crown className="size-6" />
+              </div>
+              <div className="text-center">
+                <h3 className="font-extrabold text-slate-900 text-lg">¿Cancelar membresía Prime?</h3>
+                <p className="text-xs text-slate-500 mt-1">
+                  Perderás el delivery ecológico ilimitado gratuito y el acceso preferente a los packs de rescate.
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCancelConfirm(false)}
+                  disabled={isProcessing}
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2.5 rounded-xl text-xs transition"
+                >
+                  Seguir siendo Prime
+                </button>
+                <button
+                  type="button"
+                  onClick={handleCancelPrime}
+                  disabled={isProcessing}
+                  className="w-full bg-rose-600 hover:bg-rose-700 text-white font-bold py-2.5 rounded-xl text-xs transition flex items-center justify-center gap-1.5 disabled:opacity-50"
+                >
+                  {isProcessing ? (
+                    <>
+                      <Loader2 className="size-3.5 animate-spin" />
+                      <span>Procesando...</span>
+                    </>
+                  ) : (
+                    <span>Sí, cancelar</span>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }

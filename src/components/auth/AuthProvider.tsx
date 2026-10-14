@@ -20,6 +20,15 @@ export interface UserProfile {
   name: string;
   email: string;
   photoURL?: string;
+  phone?: string;
+  address?: string;
+  dietaryPreference?: string;
+  emailNotifications?: boolean;
+  whatsappNotifications?: boolean;
+  defaultBringContainer?: boolean;
+  favoriteRestaurantIds?: string[];
+  primePlan?: "monthly" | "annual";
+  primeSince?: string;
   createdAt?: any;
   co2SavedKg?: number;
   moneySaved?: number;
@@ -35,7 +44,7 @@ interface AuthContextType {
   registerWithEmail: (name: string, email: string, pass: string, avatarUrl?: string) => Promise<void>;
   loginWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
-  updateUserProfile: (data: { name?: string; photoURL?: string }) => Promise<void>;
+  updateUserProfile: (data: Partial<UserProfile>) => Promise<void>;
   refreshUserProfile: () => Promise<void>;
 }
 
@@ -220,12 +229,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/login");
   };
 
-  const updateUserProfile = async (data: { name?: string; photoURL?: string }) => {
+  const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (!user) return;
 
     const cleanAvatar = data.photoURL ? getCleanAvatar(data.photoURL) : undefined;
 
-    // 1. Actualizar en Firebase Auth
+    // 1. Actualizar en Firebase Auth si corresponde
     const authUpdates: { displayName?: string; photoURL?: string } = {};
     if (data.name) authUpdates.displayName = data.name.trim();
     if (cleanAvatar) authUpdates.photoURL = cleanAvatar;
@@ -238,14 +247,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.warn("Error actualizando perfil en Auth:", e);
     }
 
-    // 2. Actualizar en Firestore
+    // 2. Actualizar en Firestore con merge
     try {
       const userRef = doc(db, "users", user.uid);
-      await setDoc(userRef, {
-        ...(profile || {}),
-        ...(data.name ? { name: data.name.trim() } : {}),
-        ...(cleanAvatar ? { photoURL: cleanAvatar } : {}),
-      }, { merge: true });
+      const payload: Record<string, any> = { ...data };
+      if (payload.name) payload.name = payload.name.trim();
+      if (cleanAvatar) payload.photoURL = cleanAvatar;
+
+      await setDoc(userRef, payload, { merge: true });
     } catch (e) {
       console.warn("Error actualizando perfil en Firestore:", e);
     }
@@ -264,6 +273,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       };
       return {
         ...current,
+        ...data,
         ...(data.name ? { name: data.name.trim() } : {}),
         ...(cleanAvatar ? { photoURL: cleanAvatar } : {}),
       };

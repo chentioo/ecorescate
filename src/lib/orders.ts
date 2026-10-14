@@ -289,6 +289,85 @@ export async function verifyOrderByCode(code: string, restaurantName?: string): 
   }
 }
 
+export async function cancelOrder(orderId: string, userId: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const orderRef = doc(db, "orders", orderId);
+    const orderSnap = await getDoc(orderRef);
+    if (!orderSnap.exists()) {
+      return { success: false, error: "La orden no existe." };
+    }
+    const orderData = orderSnap.data() as Order;
+    if (orderData.status === "cancelled") {
+      return { success: false, error: "La orden ya ha sido cancelada." };
+    }
+
+    // 1. Marcar como cancelada
+    await updateDoc(orderRef, {
+      status: "cancelled",
+      cancelledAt: serverTimestamp(),
+    });
+
+    const quantity = orderData.quantity || 1;
+
+    // 2. Devolver stock al pack
+    if (orderData.packId) {
+      try {
+        const packRef = doc(db, "packs", orderData.packId);
+        const packSnap = await getDoc(packRef);
+        if (packSnap.exists()) {
+          const packData = packSnap.data();
+          const newStock = Number(packData.packsAvailable ?? 0) + quantity;
+          await updateDoc(packRef, {
+            packsAvailable: newStock,
+            status: "available",
+          });
+        }
+      } catch (e) {
+        console.warn("Error restoring pack stock:", e);
+      }
+    }
+
+    // 3. Devolver stock al restaurante
+    if (orderData.restaurantId) {
+      try {
+        const restRef = doc(db, "restaurants", orderData.restaurantId);
+        const restSnap = await getDoc(restRef);
+        if (restSnap.exists()) {
+          const restData = restSnap.data();
+          const newRestStock = Number(restData.packsAvailable ?? 0) + quantity;
+          await updateDoc(restRef, {
+            packsAvailable: newRestStock,
+          });
+        }
+      } catch (e) {
+        console.warn("Error restoring restaurant stock:", e);
+      }
+    }
+
+    // 4. Actualizar localStorage
+    if (typeof window !== "undefined") {
+      try {
+        const orders = JSON.parse(localStorage.getItem(`eco_orders_${userId}`) || "[]");
+        const updated = orders.map((o: Order) => o.id === orderId ? { ...o, status: "cancelled" } : o);
+        localStorage.setItem(`eco_orders_${userId}`, JSON.stringify(updated));
+
+        const lastOrder = localStorage.getItem("eco_last_order");
+        if (lastOrder) {
+          const parsed = JSON.parse(lastOrder);
+          if (parsed.id === orderId) {
+            localStorage.setItem("eco_last_order", JSON.stringify({ ...parsed, status: "cancelled" }));
+          }
+        }
+      } catch (e) {}
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Error cancelling order:", err);
+    return { success: false, error: err.message || "Error al cancelar la orden." };
+  }
+}
+
 export async function getOrderByCode(code: string): Promise<Order | null> {
   try {
     const res = await fetch(`/api/orders/verify?code=${encodeURIComponent(code)}`);

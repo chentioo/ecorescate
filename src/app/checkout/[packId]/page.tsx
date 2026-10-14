@@ -161,6 +161,13 @@ export default function CheckoutPage({ params }: { params: Promise<{ packId: str
 
   const isPrime = profile?.isPrime ?? false;
 
+  // Si el usuario tiene configurado llevar su táper por defecto, preseleccionarlo
+  useEffect(() => {
+    if (profile?.defaultBringContainer) {
+      setBringOwnContainer(true);
+    }
+  }, [profile?.defaultBringContainer]);
+
   // Cargar datos reales del pack desde Firestore
   useEffect(() => {
     async function fetchLivePack() {
