@@ -20,7 +20,9 @@ import {
   ShoppingBag,
   CreditCard,
   Wallet,
-  Banknote
+  Banknote,
+  Copy,
+  Check
 } from "lucide-react";
 import { getOrderById } from "@/lib/orders";
 import { Order } from "@/types";
@@ -34,6 +36,15 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderId
   
   const [order, setOrder] = useState<Order | null>(null);
   const [loading, setLoading] = useState(true);
+  const [copied, setCopied] = useState(false);
+
+  const handleCopyCode = () => {
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(displayCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2200);
+    }
+  };
 
   // Cargar orden real
   useEffect(() => {
@@ -109,48 +120,101 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderId
       <div className="absolute top-10 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-1/4 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-md w-full bg-white rounded-3xl shadow-2xl overflow-hidden relative z-10 border border-slate-100">
+      {/* Pase Digital estilo Apple Wallet */}
+      <div className="max-w-md w-full shadow-2xl relative z-10 rounded-[32px] overflow-hidden border border-slate-700/50 bg-slate-900 transition-all duration-300">
         
-        {/* Encabezado Éxito */}
-        <div className="bg-gradient-to-b from-emerald-50 to-white pt-8 pb-6 px-6 sm:px-8 text-center border-b border-slate-100">
-          <div className="mx-auto size-16 bg-emerald-100/80 rounded-full flex items-center justify-center mb-3 shadow-inner ring-4 ring-emerald-50">
-            <CheckCircle2 className="size-9 text-emerald-600" />
+        {/* Cabecera Superior del Pase (Dark Glassmorphism) */}
+        <div className="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 p-6 text-white relative">
+          <div className="flex items-center justify-between mb-4">
+            <div className="inline-flex items-center gap-1.5 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider">
+              <Leaf className="size-3.5 text-emerald-400" />
+              Pase Digital de Recojo
+            </div>
+            <span className="text-[11px] font-mono text-slate-400">
+              Apple Wallet
+            </span>
           </div>
-          
-          <span className="bg-emerald-100 text-emerald-800 text-[11px] font-bold px-3 py-1 rounded-full uppercase tracking-wider">
-            ¡Reserva Confirmada!
-          </span>
 
-          <h1 className="text-2xl font-extrabold text-slate-900 mt-2">
-            ¡Comida Rescatada!
-          </h1>
-          <p className="text-slate-500 text-xs mt-1">
-            Tu pedido ya está registrado en el sistema del restaurante.
-          </p>
+          <div className="space-y-1">
+            <p className="text-xs uppercase tracking-wider font-semibold text-slate-400">
+              Restaurante aliado
+            </p>
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+              {displayRestaurant}
+            </h1>
+          </div>
 
-          <div className="mt-4 inline-flex items-center gap-2 bg-slate-900 text-white font-mono font-bold px-4 py-1.5 rounded-xl text-sm shadow-sm">
-            <span>Código de recojo:</span>
-            <span className="text-emerald-400 tracking-wider text-base">{displayCode}</span>
+          <div className="mt-4 flex items-center justify-between pt-3 border-t border-slate-800/80 text-xs">
+            <div>
+              <span className="text-slate-400 text-[11px] block">Pack asignado</span>
+              <span className="font-bold text-white text-sm">{displayPack}</span>
+            </div>
+            <div className="text-right">
+              <span className="text-slate-400 text-[11px] block">Cantidad</span>
+              <span className="font-bold text-emerald-400 text-sm">{displayQuantity}x unidad</span>
+            </div>
           </div>
         </div>
 
-        <div className="p-6 sm:p-8 space-y-6">
+        {/* Separador Dentado / Perforación Apple Wallet */}
+        <div className="relative flex items-center bg-slate-950 py-1 overflow-hidden">
+          <div className="absolute -left-3 size-6 rounded-full bg-slate-900 border border-slate-700/60" />
+          <div className="w-full border-t-2 border-dashed border-slate-700/70 mx-5" />
+          <div className="absolute -right-3 size-6 rounded-full bg-slate-900 border border-slate-700/60" />
+        </div>
+
+        {/* Cuerpo del Pase (Superficie Blanca Prístina) */}
+        <div className="bg-white p-6 sm:p-7 space-y-6">
           
-          {/* Código QR para Recojo */}
+          {/* Sección Código QR Dinámico */}
           {!isDelivery ? (
-            <div className="flex flex-col items-center bg-slate-50 p-5 rounded-2xl border border-slate-200">
-              <p className="text-xs text-center text-slate-600 font-semibold mb-3">
-                Muestra este código QR en el mostrador del restaurante
-              </p>
-              <div className="bg-white p-3 rounded-2xl shadow-sm border border-slate-200">
-                <QRCode value={displayCode} size={150} fgColor="#0f172a" />
+            <div className="flex flex-col items-center bg-slate-50/80 p-5 rounded-3xl border border-slate-200/80 shadow-xs">
+              <span className="text-[11px] text-slate-500 font-semibold uppercase tracking-wider mb-3">
+                Escanea en el mostrador para retirar
+              </span>
+
+              {/* QR Code Container */}
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-center">
+                <QRCode value={displayCode} size={160} fgColor="#0f172a" />
               </div>
-              <p className="text-[11px] text-slate-400 mt-2 font-mono">
-                #{orderId}
-              </p>
+
+              {/* Código de Recojo y Botón de Copiar */}
+              <div className="mt-4 flex flex-col items-center gap-2 w-full">
+                <div className="flex items-center justify-center gap-2 bg-slate-900 text-white px-4 py-2 rounded-2xl shadow-xs w-full max-w-xs">
+                  <span className="text-xs text-slate-400 uppercase tracking-wider font-semibold">Código:</span>
+                  <span className="font-mono text-base font-extrabold text-emerald-400 tracking-wider">
+                    {displayCode}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleCopyCode}
+                    className={`ml-auto apple-btn px-2.5 py-1 rounded-xl text-[11px] font-bold flex items-center gap-1 transition-all cursor-pointer ${
+                      copied 
+                        ? "bg-emerald-600 text-white shadow-xs" 
+                        : "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                    }`}
+                    title="Copiar código de recojo"
+                  >
+                    {copied ? (
+                      <>
+                        <Check className="size-3 stroke-[2.5]" />
+                        <span>¡Copiado!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="size-3" />
+                        <span>Copiar</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+                <span className="text-[10px] text-slate-400 font-mono">
+                  ID: #{orderId.slice(-8)}
+                </span>
+              </div>
             </div>
           ) : (
-            <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 text-center">
+            <div className="bg-amber-50 border border-amber-200 rounded-3xl p-5 text-center">
               <Truck className="size-10 text-amber-500 mx-auto mb-2" />
               <h3 className="font-bold text-amber-900 text-sm">Delivery Ecológico en Preparación</h3>
               <p className="text-xs text-amber-700 mt-0.5">
@@ -159,24 +223,24 @@ export default function OrderSuccessPage({ params }: { params: Promise<{ orderId
             </div>
           )}
 
-          {/* Impacto Positivo */}
+          {/* Sellos de Impacto Ecológico y Ahorro */}
           <div className="grid grid-cols-2 gap-3">
-            <div className="bg-emerald-50 rounded-2xl p-3 border border-emerald-100 flex items-center gap-2.5">
-              <div className="size-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+            <div className="bg-emerald-50/90 rounded-2xl p-3 border border-emerald-100 flex items-center gap-2.5">
+              <div className="size-9 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
                 <Leaf className="size-4" />
               </div>
               <div>
-                <p className="text-[10px] text-emerald-700 font-semibold">CO2 Evitado</p>
+                <p className="text-[10px] text-emerald-700 font-bold uppercase tracking-wider">CO2 Evitado</p>
                 <p className="text-sm font-extrabold text-emerald-950">{displayCo2}</p>
               </div>
             </div>
 
-            <div className="bg-amber-50 rounded-2xl p-3 border border-amber-100 flex items-center gap-2.5">
-              <div className="size-8 rounded-lg bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
+            <div className="bg-amber-50/90 rounded-2xl p-3 border border-amber-100 flex items-center gap-2.5">
+              <div className="size-9 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
                 <Sparkles className="size-4" />
               </div>
               <div>
-                <p className="text-[10px] text-amber-700 font-semibold">Dinero Ahorrado</p>
+                <p className="text-[10px] text-amber-700 font-bold uppercase tracking-wider">Dinero Ahorrado</p>
                 <p className="text-sm font-extrabold text-amber-950">{displayMoneySaved}</p>
               </div>
             </div>

@@ -106,6 +106,8 @@ const MOCK_PACKS = [
     imageUrl: "/restaurants/LALUCHA.jpg",
     pickupTime: "20:00 - 21:30",
     distance: "0.8 km",
+    packsAvailable: 3,
+    status: "available",
   },
   {
     id: "2",
@@ -117,6 +119,8 @@ const MOCK_PACKS = [
     imageUrl: "/restaurants/PUNTOAZUL.jpg",
     pickupTime: "16:00 - 17:00",
     distance: "1.2 km",
+    packsAvailable: 5,
+    status: "available",
   },
   {
     id: "3",
@@ -128,6 +132,8 @@ const MOCK_PACKS = [
     imageUrl: "/restaurants/SieteSopas.jpg",
     pickupTime: "22:00 - 23:30",
     distance: "2.5 km",
+    packsAvailable: 0,
+    status: "sold_out",
   },
   {
     id: "4",
@@ -139,6 +145,8 @@ const MOCK_PACKS = [
     imageUrl: "/restaurants/BodegaVerde.jpg",
     pickupTime: "11:30 - 12:30",
     distance: "3.1 km",
+    packsAvailable: 2,
+    status: "available",
   },
   {
     id: "5",
@@ -150,6 +158,8 @@ const MOCK_PACKS = [
     imageUrl: "/restaurants/LAMAR.jpg",
     pickupTime: "15:00 - 16:30",
     distance: "1.5 km",
+    packsAvailable: 2,
+    status: "available",
   },
   {
     id: "6",
@@ -161,6 +171,8 @@ const MOCK_PACKS = [
     imageUrl: "/restaurants/Rockys.jpg",
     pickupTime: "21:30 - 23:00",
     distance: "0.5 km",
+    packsAvailable: 6,
+    status: "available",
   },
   {
     id: "7",
@@ -172,6 +184,8 @@ const MOCK_PACKS = [
     imageUrl: "/restaurants/ChifaTiti.jpg",
     pickupTime: "19:00 - 20:30",
     distance: "4.2 km",
+    packsAvailable: 1,
+    status: "available",
   },
   {
     id: "8",
@@ -183,30 +197,53 @@ const MOCK_PACKS = [
     imageUrl: "/restaurants/Hikari.jpg",
     pickupTime: "22:00 - 23:00",
     distance: "1.8 km",
+    packsAvailable: 4,
+    status: "available",
   }
 ];
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const secret = searchParams.get("secret") || request.headers.get("x-seed-secret");
+
+    // En producción, bloquear si no se proporciona el secreto autorizado
+    if (process.env.NODE_ENV === "production") {
+      const validSecret = process.env.SEED_SECRET;
+      if (!validSecret || secret !== validSecret) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: "El sembrado de datos en producción está bloqueado. Proporciona el parámetro ?secret=... autorizado." 
+          },
+          { status: 403 }
+        );
+      }
+    }
+
     const batch = writeBatch(db);
 
     for (const rest of MOCK_RESTAURANTS) {
-      batch.set(doc(db, "restaurants", rest.id), rest);
+      batch.set(doc(db, "restaurants", rest.id), rest, { merge: true });
     }
 
     for (const pack of MOCK_PACKS) {
-      batch.set(doc(db, "packs", pack.id), pack);
+      batch.set(doc(db, "packs", pack.id), pack, { merge: true });
     }
 
     await batch.commit();
 
     return NextResponse.json({ 
       success: true, 
-      message: "Datos insertados en Firestore correctamente",
+      message: "Datos insertados en Firestore correctamente (con merge: true)",
       restaurantsCount: MOCK_RESTAURANTS.length,
       packsCount: MOCK_PACKS.length
     });
   } catch (error: any) {
     return NextResponse.json({ success: false, error: error.message }, { status: 500 });
   }
+}
+
+export async function POST(request: Request) {
+  return GET(request);
 }

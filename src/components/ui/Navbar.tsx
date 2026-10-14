@@ -11,7 +11,17 @@ export function Navbar() {
   const { user, profile, logout } = useAuth();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrolled(window.scrollY > 12);
+    };
+    handleScroll();
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // En páginas de autenticación no mostramos el menú regular
   const isAuthRoute = pathname === "/login" || pathname === "/register";
@@ -25,10 +35,10 @@ export function Navbar() {
 
   if (isAuthRoute) {
     return (
-      <nav className="fixed top-0 w-full z-50 glass-nav border-b border-slate-100">
+      <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "glass-nav-scrolled" : "glass-nav"}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-center items-center h-16">
-            <Link href="/login" className="flex items-center gap-2">
+            <Link href="/login" className="flex items-center gap-2 apple-btn">
               <div className="bg-primary/10 p-1.5 rounded-xl">
                 <Leaf className="size-6 text-primary" />
               </div>
@@ -41,11 +51,11 @@ export function Navbar() {
   }
 
   return (
-    <nav className="fixed top-0 w-full z-50 glass-nav">
+    <nav className={`fixed top-0 w-full z-50 transition-all duration-300 ${scrolled ? "glass-nav-scrolled" : "glass-nav"}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2 apple-btn">
               <div className="bg-primary/10 p-1.5 rounded-xl">
                 <Leaf className="size-6 text-primary" />
               </div>
@@ -54,15 +64,15 @@ export function Navbar() {
           </div>
 
           <div className="hidden md:flex space-x-5 items-center">
-            <Link href="/explore" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors">
+            <Link href="/explore" className="text-sm font-medium text-slate-600 hover:text-primary transition-colors duration-200">
               Explorar Ofertas
             </Link>
             
-            <Link href="/prime" className="flex items-center gap-1.5 text-sm font-bold text-amber-500 bg-amber-50 px-3 py-1.5 rounded-full hover:bg-amber-100 transition-colors border border-amber-200">
+            <Link href="/prime" className="flex items-center gap-1.5 text-sm font-bold text-amber-500 bg-amber-50 px-3.5 py-1.5 rounded-full hover:bg-amber-100 transition-colors border border-amber-200/80 shadow-xs apple-btn">
               <span>✨ Prime</span>
             </Link>
 
-            <Link href="/partner" className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-full hover:bg-emerald-100 transition-colors border border-emerald-200">
+            <Link href="/partner" className="flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3.5 py-1.5 rounded-full hover:bg-emerald-100 transition-colors border border-emerald-200/80 shadow-xs apple-btn">
               <Store className="size-3.5 text-emerald-600" />
               <span>Portal Aliados</span>
             </Link>
@@ -70,9 +80,9 @@ export function Navbar() {
             {/* Perfil del usuario autenticado */}
             <Link 
               href="/profile" 
-              className="flex items-center gap-2.5 text-sm font-medium bg-white hover:bg-slate-50 text-slate-800 pl-2 pr-4 py-1.5 rounded-full transition-all border border-slate-200 shadow-sm hover:border-primary/40 group"
+              className="flex items-center gap-2.5 text-sm font-medium bg-white/90 hover:bg-white text-slate-800 pl-2 pr-4 py-1.5 rounded-full border border-slate-200/80 shadow-xs hover:border-primary/40 group apple-btn"
             >
-              <div className="size-7 rounded-full overflow-hidden border border-emerald-200 bg-emerald-50 flex items-center justify-center shrink-0 shadow-sm">
+              <div className="size-7 rounded-full overflow-hidden border border-emerald-200 bg-emerald-50 flex items-center justify-center shrink-0 shadow-xs">
                 <img 
                   src={imgError ? DEFAULT_AVATAR : photoURL} 
                   alt={displayName} 
@@ -87,7 +97,8 @@ export function Navbar() {
           <div className="md:hidden flex items-center">
             <button 
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 focus:outline-none transition"
+              className="p-2 rounded-xl text-slate-600 hover:bg-slate-100 focus:outline-none apple-btn"
+              aria-label="Abrir menú"
             >
               {mobileMenuOpen ? <X className="size-6" /> : <Menu className="size-6" />}
             </button>
@@ -95,20 +106,20 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer con animación fluida */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white/95 backdrop-blur-md border-b border-slate-200 px-4 pt-3 pb-6 space-y-3">
+        <div className="md:hidden bg-white/95 backdrop-blur-2xl border-b border-slate-200/80 px-4 pt-3 pb-6 space-y-3 animate-apple-fade-in shadow-xl">
           <Link 
             href="/explore" 
             onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-xl text-base font-medium text-slate-700 hover:bg-slate-50"
+            className="block px-3 py-2 rounded-xl text-base font-medium text-slate-700 hover:bg-slate-50 transition-colors"
           >
             Explorar Ofertas
           </Link>
           <Link 
             href="/prime" 
             onClick={() => setMobileMenuOpen(false)}
-            className="block px-3 py-2 rounded-xl text-base font-bold text-amber-600 bg-amber-50"
+            className="block px-3 py-2 rounded-xl text-base font-bold text-amber-600 bg-amber-50 border border-amber-200/60"
           >
             ✨ EcoRescate Prime
           </Link>
@@ -123,7 +134,7 @@ export function Navbar() {
           <Link 
             href="/profile" 
             onClick={() => setMobileMenuOpen(false)}
-            className="flex items-center gap-3 px-3 py-2 rounded-xl text-base font-medium text-slate-800 bg-slate-50"
+            className="flex items-center gap-3 px-3 py-2 rounded-xl text-base font-medium text-slate-800 bg-slate-50 border border-slate-100"
           >
             <div className="size-7 rounded-full overflow-hidden border border-slate-200 bg-emerald-50 shrink-0">
               <img 
@@ -139,7 +150,7 @@ export function Navbar() {
               setMobileMenuOpen(false);
               logout();
             }}
-            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-base font-medium text-red-500 hover:bg-red-50"
+            className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-base font-medium text-red-500 hover:bg-red-50 transition-colors"
           >
             <LogOut className="size-5" />
             <span>Cerrar Sesión</span>

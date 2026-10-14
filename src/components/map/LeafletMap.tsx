@@ -16,15 +16,17 @@ interface Restaurant {
   location: Location;
   packsAvailable: number;
   logoUrl?: string;
+  rating?: number;
 }
 
 interface LeafletMapProps {
   restaurants: Restaurant[];
   userLocation: Location | null;
   center: Location;
+  onSelectRestaurant?: (restaurant: Restaurant) => void;
 }
 
-export default function LeafletMap({ restaurants, userLocation, center }: LeafletMapProps) {
+export default function LeafletMap({ restaurants, userLocation, center, onSelectRestaurant }: LeafletMapProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
 
@@ -90,44 +92,56 @@ export default function LeafletMap({ restaurants, userLocation, center }: Leafle
         `);
     }
 
-    // Iconos de los restaurantes
+    // Iconos de los restaurantes con etiquetas limpias estilo Apple / Airbnb
     restaurants.forEach((restaurant) => {
       const isAvailable = restaurant.packsAvailable > 0;
-      const bgColor = isAvailable ? "#16a34a" : "#64748b";
-
-      const iconContent = restaurant.logoUrl 
-        ? `<img src="${restaurant.logoUrl}" alt="${restaurant.name}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" />`
-        : `<span style="font-size: 14px; font-weight: bold;">🍴</span>`;
+      const tagText = isAvailable 
+        ? `${restaurant.packsAvailable} ${restaurant.packsAvailable === 1 ? 'pack' : 'packs'}` 
+        : 'Agotado';
 
       const restaurantIcon = L.divIcon({
-        className: "custom-restaurant-pin",
+        className: "custom-restaurant-pill",
         html: `
-          <div style="background-color: ${bgColor}; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 2.5px solid white; box-shadow: 0 4px 8px rgba(0,0,0,0.25); cursor: pointer; overflow: hidden; transition: transform 0.2s;">
-            ${iconContent}
+          <div style="
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: ${isAvailable ? '#ffffff' : '#f8fafc'};
+            color: ${isAvailable ? '#0f172a' : '#64748b'};
+            padding: 4px 10px;
+            border-radius: 9999px;
+            box-shadow: 0 4px 12px rgba(15, 23, 42, 0.18), 0 1px 2px rgba(0,0,0,0.06);
+            border: 1.5px solid ${isAvailable ? '#16a34a' : '#cbd5e1'};
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 11px;
+            font-weight: 700;
+            cursor: pointer;
+            white-space: nowrap;
+            transform: translate(-50%, -50%);
+            transition: transform 0.2s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.2s ease;
+          ">
+            <span style="
+              width: 7px;
+              height: 7px;
+              border-radius: 50%;
+              background: ${isAvailable ? '#16a34a' : '#94a3b8'};
+              display: inline-block;
+            "></span>
+            <span>${tagText}</span>
           </div>
         `,
-        iconSize: [36, 36],
-        iconAnchor: [18, 18],
+        iconSize: [60, 24],
+        iconAnchor: [30, 12],
       });
 
-      const popupContent = `
-        <div style="padding: 6px; font-family: system-ui, sans-serif; min-width: 140px;">
-          <h4 style="margin: 0 0 3px 0; font-size: 14px; font-weight: bold; color: #0f172a;">${restaurant.name}</h4>
-          <p style="margin: 0 0 6px 0; font-size: 12px; color: #64748b;">${restaurant.category}</p>
-          <span style="display: inline-block; padding: 2px 8px; font-size: 11px; font-weight: 600; border-radius: 9999px; background-color: ${isAvailable ? '#dcfce7' : '#f1f5f9'}; color: ${isAvailable ? '#15803d' : '#64748b'};">
-            ${isAvailable ? `${restaurant.packsAvailable} packs disponibles` : 'Agotado'}
-          </span>
-          <div style="margin-top: 8px;">
-            <a href="/restaurant/${restaurant.id}" style="display: block; text-align: center; background: #16a34a; color: white; text-decoration: none; padding: 5px 8px; border-radius: 6px; font-size: 11px; font-weight: bold;">
-              Ver menú de rescate
-            </a>
-          </div>
-        </div>
-      `;
+      const marker = L.marker([restaurant.location.lat, restaurant.location.lng], { icon: restaurantIcon })
+        .addTo(map);
 
-      L.marker([restaurant.location.lat, restaurant.location.lng], { icon: restaurantIcon })
-        .addTo(map)
-        .bindPopup(popupContent);
+      marker.on("click", () => {
+        if (onSelectRestaurant) {
+          onSelectRestaurant(restaurant);
+        }
+      });
     });
 
     return () => {

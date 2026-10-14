@@ -140,8 +140,11 @@ export default async function RestaurantPage({ params }: { params: Promise<{ id:
         <div className="absolute inset-0 bg-slate-900/40 z-10" />
         <img src={data.coverUrl} alt={data.name} className="w-full h-full object-cover" />
         
-        <div className="absolute top-20 left-4 sm:left-8 z-20">
-          <Link href="/explore" className="bg-white/20 hover:bg-white/40 backdrop-blur-md p-2 rounded-full inline-flex items-center justify-center text-white transition">
+        <div className="absolute top-20 left-4 sm:left-8 z-20 animate-apple-fade-in">
+          <Link 
+            href="/explore" 
+            className="apple-btn bg-white/20 hover:bg-white/40 backdrop-blur-md p-2.5 rounded-full inline-flex items-center justify-center text-white shadow-sm"
+          >
             <ArrowLeft className="size-5" />
           </Link>
         </div>
@@ -149,7 +152,7 @@ export default async function RestaurantPage({ params }: { params: Promise<{ id:
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 -mt-16 relative z-20">
         {/* Info Card */}
-        <div className="bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200">
+        <div className="animate-apple-fade-up bg-white rounded-3xl p-6 sm:p-8 shadow-sm border border-slate-200/80 transition-all duration-300">
           <div className="flex flex-col md:flex-row justify-between md:items-end gap-4 mb-4">
             <div>
               <div className="flex items-center gap-2 mb-2">
@@ -158,10 +161,10 @@ export default async function RestaurantPage({ params }: { params: Promise<{ id:
                 </span>
                 <span className="text-sm font-medium text-slate-500">{data.category}</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900">{data.name}</h1>
+              <h1 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">{data.name}</h1>
             </div>
             
-            <div className="flex items-center gap-1 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-xl border border-amber-200">
+            <div className="flex items-center gap-1 bg-amber-50 text-amber-700 px-3 py-1.5 rounded-xl border border-amber-200/70 shadow-xs">
               <Star className="size-5 fill-amber-500 text-amber-500" />
               <span className="font-bold text-lg">{data.rating}</span>
               <span className="text-sm opacity-70">({data.reviews})</span>
@@ -178,7 +181,7 @@ export default async function RestaurantPage({ params }: { params: Promise<{ id:
                 href={`https://www.google.com/maps/dir/?api=1&destination=${data.location.lat},${data.location.lng}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary hover:text-primary/80 font-semibold text-xs flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-full transition-colors"
+                className="apple-btn text-primary hover:text-primary/90 font-semibold text-xs flex items-center gap-1 bg-primary/10 px-3 py-1.5 rounded-full"
               >
                 Cómo llegar
               </a>
@@ -195,12 +198,17 @@ export default async function RestaurantPage({ params }: { params: Promise<{ id:
         </div>
 
         {/* Packs */}
-        <div className="mt-10">
-          <h2 className="text-2xl font-bold text-slate-900 mb-6">Packs disponibles hoy</h2>
+        <div className="mt-10 animate-apple-fade-up stagger-2">
+          <h2 className="text-2xl font-bold text-slate-900 mb-6 tracking-tight">Packs disponibles hoy</h2>
           
           <div className="grid sm:grid-cols-2 gap-6">
-            {data.packs.map((pack: any) => (
-              <Link key={pack.id} href={`/checkout/${pack.id}`} className="block group">
+            {data.packs.map((pack: any, index: number) => (
+              <Link 
+                key={pack.id} 
+                href={`/checkout/${pack.id}`} 
+                className="block group animate-apple-fade-up"
+                style={{ animationDelay: `${index * 60}ms` }}
+              >
                 <FoodCard {...pack} />
               </Link>
             ))}

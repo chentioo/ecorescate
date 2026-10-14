@@ -71,6 +71,7 @@ export async function createOrder(params: CreateOrderParams): Promise<Order> {
     bringOwnContainer: params.bringOwnContainer ?? false,
     notes: params.notes || "",
     status: "confirmed",
+    paymentStatus: "pending",
     createdAt: new Date().toISOString(),
   };
 
@@ -107,29 +108,28 @@ export async function createOrder(params: CreateOrderParams): Promise<Order> {
 
   // 2. Fallback de cliente si la API no está disponible o estamos offline
   try {
-    // 1. Guardar orden en Firestore
+    // 1. Descontar stock en Firestore si existe pack y verificar disponibilidad
+    const packRef = doc(db, "packs", params.packId);
+    const packSnap = await getDoc(packRef);
+    if (packSnap.exists()) {
+      const packData = packSnap.data();
+      const currentPacks = Number(packData.packsAvailable ?? 0);
+      if (currentPacks < quantity || packData.status === "sold_out") {
+        throw new Error(`Stock insuficiente: solo quedan ${currentPacks} packs disponibles.`);
+      }
+      const newStock = Math.max(0, currentPacks - quantity);
+      await updateDoc(packRef, {
+        packsAvailable: newStock,
+        status: newStock === 0 ? "sold_out" : "available",
+      });
+    }
+
+    // 2. Guardar orden en Firestore
     const orderRef = doc(db, "orders", orderId);
     await setDoc(orderRef, {
       ...newOrder,
       createdAt: serverTimestamp(),
     });
-
-    // 2. Descontar stock en Firestore si existe pack
-    try {
-      const packRef = doc(db, "packs", params.packId);
-      const packSnap = await getDoc(packRef);
-      if (packSnap.exists()) {
-        const packData = packSnap.data();
-        const currentPacks = packData.packsAvailable ?? 3;
-        const newStock = Math.max(0, currentPacks - quantity);
-        await updateDoc(packRef, {
-          packsAvailable: newStock,
-          status: newStock === 0 ? "sold_out" : "available",
-        });
-      }
-    } catch (e) {
-      console.warn("Non-fatal stock update warning for pack:", e);
-    }
 
     // 3. Descontar en restaurante si existe
     try {
@@ -137,7 +137,7 @@ export async function createOrder(params: CreateOrderParams): Promise<Order> {
       const restSnap = await getDoc(restRef);
       if (restSnap.exists()) {
         const restData = restSnap.data();
-        const currentRestPacks = restData.packsAvailable ?? 3;
+        const currentRestPacks = Number(restData.packsAvailable ?? 0);
         await updateDoc(restRef, {
           packsAvailable: Math.max(0, currentRestPacks - quantity),
         });
@@ -171,7 +171,10 @@ export async function createOrder(params: CreateOrderParams): Promise<Order> {
       console.warn("Non-fatal user impact increment warning:", e);
     }
 
-  } catch (error) {
+  } catch (error: any) {
+    if (error.message && error.message.includes("Stock insuficiente")) {
+      throw error;
+    }
     console.error("Error creating order in Firestore, using local fallback:", error);
   }
 

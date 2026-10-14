@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Leaf, MapPin, Store, Star, TrendingDown, Clock, ShieldCheck, Scale, Cloud, Wallet, CheckCircle2 } from "lucide-react";
 import { FoodCard } from "@/components/ui/FoodCard";
+import { FeaturedPacksSection } from "@/components/home/FeaturedPacksSection";
 import Image from "next/image";
 
 export default function Home() {
@@ -17,11 +18,11 @@ export default function Home() {
           <div className="grid lg:grid-cols-2 gap-10 lg:gap-12 items-center">
             
             <div className="relative z-10">
-              <span className="inline-flex items-center justify-center rounded-md border w-fit whitespace-nowrap mb-5 gap-1.5 bg-leaf-soft text-leaf-deep border-leaf/30 px-3 py-1.5 text-xs font-semibold">
+              <span className="inline-flex items-center justify-center rounded-md border w-fit whitespace-nowrap mb-5 gap-1.5 bg-leaf-soft text-leaf-deep border-leaf/30 px-3 py-1.5 text-xs font-semibold animate-apple-fade-up">
                 <Leaf className="size-3.5" /> Plataforma de rescate de comida · Perú 🇵🇪
               </span>
               
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-balance leading-[1.05]">
+              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-balance leading-[1.05] animate-apple-fade-up stagger-1">
                 Salva comida.{" "}
                 <span className="relative inline-block">
                   <span className="relative z-10 text-leaf-deep">Ahorra dinero.</span>
@@ -30,27 +31,27 @@ export default function Home() {
                 Cuida el planeta.
               </h1>
               
-              <p className="mt-5 text-lg text-muted-foreground max-w-xl text-balance">
+              <p className="mt-5 text-lg text-muted-foreground max-w-xl text-balance animate-apple-fade-up stagger-2">
                 Rescata comidas de restaurantes peruanos con hasta <span className="font-semibold text-foreground">70% de descuento</span>. Come delicioso, paga menos y evita el desperdicio de alimentos.
               </p>
               
-              <div className="mt-7 flex flex-col sm:flex-row gap-3">
-                <Link href="/explore" className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all rounded-md px-7 h-12 text-base bg-leaf hover:bg-leaf-deep text-white shadow-xl shadow-leaf/25">
+              <div className="mt-7 flex flex-col sm:flex-row gap-3 animate-apple-fade-up stagger-3">
+                <Link href="/explore" className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium rounded-md px-7 h-12 text-base bg-leaf hover:bg-leaf-deep text-white shadow-xl shadow-leaf/25 apple-btn">
                   <MapPin className="size-5" /> Ofertas cercanas
                 </Link>
-                <Link href="#restaurantes" className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium transition-all rounded-md px-7 h-12 text-base bg-background/60 backdrop-blur border border-border hover:bg-accent hover:text-accent-foreground shadow-xs">
+                <Link href="#restaurantes" className="inline-flex items-center justify-center gap-2 whitespace-nowrap font-medium rounded-md px-7 h-12 text-base bg-background/60 backdrop-blur border border-border hover:bg-accent hover:text-accent-foreground shadow-xs apple-btn">
                   <Store className="size-5" /> Ver restaurantes
                 </Link>
               </div>
             </div>
 
-            <div className="relative h-[420px] sm:h-[480px] lg:h-[540px] hidden md:block">
-              <div className="absolute top-0 right-4 w-[58%] aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-200">
+            <div className="relative h-[420px] sm:h-[480px] lg:h-[540px] hidden md:block animate-apple-fade-up stagger-2">
+              <div className="absolute top-0 right-4 w-[58%] aspect-[4/5] rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-200 apple-card">
                 <Image 
                   src="https://images.unsplash.com/photo-1547592166-23ac45744acd?w=800&auto=format&fit=crop&q=80" 
                   alt="Sopa deliciosa" 
                   fill 
-                  className="object-cover"
+                  className="object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
                 />
                 <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/90 via-black/60 to-transparent text-white">
                   <div className="text-xs opacity-80">Siete Sopas</div>
@@ -63,18 +64,18 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="absolute bottom-0 left-0 w-[52%] aspect-square rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-100">
+              <div className="absolute bottom-0 left-0 w-[52%] aspect-square rounded-3xl overflow-hidden shadow-2xl border-4 border-white bg-slate-100 apple-card">
                 <Image 
                   src="https://images.unsplash.com/photo-1628840042765-356cda07504e?w=600&auto=format&fit=crop&q=80" 
                   alt="Sándwich" 
                   fill 
-                  className="object-cover"
+                  className="object-cover transition-transform duration-700 ease-out hover:scale-[1.03]"
                 />
               </div>
               
-              <div className="absolute top-10 left-2 w-52 glass-card rounded-2xl p-3.5 shadow-xl">
+              <div className="absolute top-10 left-2 w-52 glass-card rounded-2xl p-3.5 shadow-xl apple-card">
                 <div className="flex items-center gap-2">
-                  <div className="grid size-9 place-items-center rounded-xl bg-leaf text-white">
+                  <div className="grid size-9 place-items-center rounded-xl bg-leaf text-white shadow-xs">
                     <Leaf className="size-5" />
                   </div>
                   <div>
@@ -84,7 +85,7 @@ export default function Home() {
                 </div>
               </div>
               
-              <div className="absolute bottom-6 right-0 w-48 glass-card rounded-2xl p-3.5 shadow-xl">
+              <div className="absolute bottom-6 right-0 w-48 glass-card rounded-2xl p-3.5 shadow-xl apple-card">
                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <Clock className="size-3.5" /> Recolección
                 </div>
@@ -143,6 +144,9 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Featured Packs with Quick Filters */}
+      <FeaturedPacksSection />
+
       {/* How it Works */}
       <section className="py-24 bg-background" id="como-funciona">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -152,29 +156,29 @@ export default function Home() {
           </div>
           
           <div className="grid md:grid-cols-3 gap-8">
-            <div className="glass-card rounded-2xl p-8 relative overflow-hidden">
+            <div className="apple-card rounded-2xl p-8 relative overflow-hidden bg-white border border-slate-200/70">
               <div className="absolute top-0 right-0 p-4 opacity-10">
                 <MapPin className="size-24" />
               </div>
-              <div className="size-12 bg-leaf-soft text-leaf-deep rounded-2xl flex items-center justify-center font-bold text-xl mb-6">1</div>
+              <div className="size-12 bg-leaf-soft text-leaf-deep rounded-2xl flex items-center justify-center font-bold text-xl mb-6 shadow-xs">1</div>
               <h3 className="text-xl font-bold mb-3">Descubre & Explora</h3>
               <p className="text-muted-foreground">Usa tu ubicación para encontrar "Packs del Día" cerca a ti. Verás el precio original y el precio de rescate con hasta 70% de descuento.</p>
             </div>
             
-            <div className="glass-card rounded-2xl p-8 relative overflow-hidden">
+            <div className="apple-card rounded-2xl p-8 relative overflow-hidden bg-white border border-slate-200/70">
                <div className="absolute top-0 right-0 p-4 opacity-10">
                 <ShieldCheck className="size-24" />
               </div>
-              <div className="size-12 bg-amber/20 text-amber-deep rounded-2xl flex items-center justify-center font-bold text-xl mb-6">2</div>
+              <div className="size-12 bg-amber/20 text-amber-deep rounded-2xl flex items-center justify-center font-bold text-xl mb-6 shadow-xs">2</div>
               <h3 className="text-xl font-bold mb-3">Reserva Seguro</h3>
               <p className="text-muted-foreground">Paga en la app y recibe un código QR. Todos los packs son excedentes del mismo día, frescos y perfectamente comestibles. Tu salud es prioridad.</p>
             </div>
             
-            <div className="glass-card rounded-2xl p-8 relative overflow-hidden">
+            <div className="apple-card rounded-2xl p-8 relative overflow-hidden bg-white border border-slate-200/70">
                <div className="absolute top-0 right-0 p-4 opacity-10">
                 <Store className="size-24" />
               </div>
-              <div className="size-12 bg-leaf text-white rounded-2xl flex items-center justify-center font-bold text-xl mb-6">3</div>
+              <div className="size-12 bg-leaf text-white rounded-2xl flex items-center justify-center font-bold text-xl mb-6 shadow-xs">3</div>
               <h3 className="text-xl font-bold mb-3">Recoge & Disfruta</h3>
               <p className="text-muted-foreground">Acércate al local en el horario indicado. Muestra tu QR, evita el recargo de envíos a domicilio y disfruta tu comida sabiendo que ayudaste al planeta.</p>
             </div>
@@ -213,7 +217,7 @@ export default function Home() {
                   </div>
                 </li>
               </ul>
-              <Link href="/prime" className="inline-flex items-center gap-2 bg-leaf hover:bg-leaf-deep text-white font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-leaf/20">
+              <Link href="/prime" className="inline-flex items-center gap-2 bg-leaf hover:bg-leaf-deep text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-leaf/20 apple-btn">
                 Multiplica tu impacto con Prime <ArrowRight className="size-4" />
               </Link>
             </div>

@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { 
-  doc, 
-  runTransaction, 
-  serverTimestamp 
+import {
+  doc,
+  runTransaction,
+  serverTimestamp
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Order } from "@/types";
@@ -43,12 +43,7 @@ export async function POST(request: Request) {
     }
 
     const quantity = Math.max(1, body.quantity || 1);
-    const unitPrice = Number(body.unitPrice || 0);
-    const originalPrice = Number(body.originalPrice || unitPrice * 2);
     const deliveryCost = Number(body.deliveryCost || 0);
-    const totalPrice = Number((unitPrice * quantity + deliveryCost).toFixed(2));
-    const moneySaved = Number(((originalPrice - unitPrice) * quantity).toFixed(2));
-    const co2SavedKg = Number((2.5 * quantity).toFixed(1));
 
     const orderId = `ORD-${Date.now()}-${Math.floor(1000 + Math.random() * 9000)}`;
     const orderCode = `ECO-${Math.floor(1000 + Math.random() * 9000)}`;
@@ -60,14 +55,29 @@ export async function POST(request: Request) {
 
     // Transacción atómica en Firestore: verifica stock, descuenta y crea la orden
     const createdOrder = await runTransaction(db, async (transaction) => {
+      // Precios base por defecto (del body si no estuviera en db)
+      let unitPrice = Number(body.unitPrice || 0);
+      let originalPrice = Number(body.originalPrice || unitPrice * 2);
+
       // 1. Leer pack actual dentro de la transacción
       const packSnap = await transaction.get(packRef);
       if (packSnap.exists()) {
         const packData = packSnap.data();
-        const available = packData.packsAvailable ?? 3;
-        if (available < quantity) {
+        const available = Number(packData.packsAvailable ?? 0);
+        if (available < quantity || packData.status === "sold_out") {
           throw new Error(`Stock insuficiente: solo quedan ${available} packs disponibles.`);
         }
+
+        // Fuente de verdad: usar rescuePrice y originalPrice reales de Firestore
+        if (packData.rescuePrice !== undefined) {
+          unitPrice = Number(packData.rescuePrice);
+        }
+        if (packData.originalPrice !== undefined) {
+          originalPrice = Number(packData.originalPrice);
+        } else {
+          originalPrice = Number(unitPrice * 2);
+        }
+
         const newStock = Math.max(0, available - quantity);
         transaction.update(packRef, {
           packsAvailable: newStock,
@@ -76,12 +86,16 @@ export async function POST(request: Request) {
         });
       }
 
+      const totalPrice = Number((unitPrice * quantity + deliveryCost).toFixed(2));
+      const moneySaved = Number(((originalPrice - unitPrice) * quantity).toFixed(2));
+      const co2SavedKg = Number((2.5 * quantity).toFixed(1));
+
       // 2. Si existe restaurante, actualizar stock del restaurante
       if (restRef) {
         const restSnap = await transaction.get(restRef);
         if (restSnap.exists()) {
           const restData = restSnap.data();
-          const currentRestPacks = restData.packsAvailable ?? 3;
+          const currentRestPacks = Number(restData.packsAvailable ?? 0);
           transaction.update(restRef, {
             packsAvailable: Math.max(0, currentRestPacks - quantity),
           });
@@ -115,6 +129,7 @@ export async function POST(request: Request) {
         bringOwnContainer: body.bringOwnContainer ?? false,
         notes: body.notes || "",
         status: "confirmed",
+        paymentStatus: "pending",
         createdAt: new Date().toISOString(),
       };
 

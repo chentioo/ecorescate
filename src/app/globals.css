@@ -70,21 +70,120 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
   * {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground antialiased selection:bg-leaf-light selection:text-leaf-deep;
+  }
+}
+
+@keyframes appleFadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes appleFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes appleScaleIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes appleShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
   }
 }
 
 @layer utilities {
+  .animate-apple-fade-up {
+    animation: appleFadeUp 500ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-apple-fade-in {
+    animation: appleFadeIn 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .animate-apple-scale-in {
+    animation: appleScaleIn 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .apple-shimmer {
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 37%, #f1f5f9 63%);
+    background-size: 200% 100%;
+    animation: appleShimmer 1.8s cubic-bezier(0.22, 1, 0.36, 1) infinite;
+  }
+
+  /* Stagger Delays for Cascade Entrances */
+  .stagger-1 { animation-delay: 50ms; }
+  .stagger-2 { animation-delay: 110ms; }
+  .stagger-3 { animation-delay: 170ms; }
+  .stagger-4 { animation-delay: 230ms; }
+  .stagger-5 { animation-delay: 290ms; }
+  .stagger-6 { animation-delay: 350ms; }
+  .stagger-7 { animation-delay: 410ms; }
+  .stagger-8 { animation-delay: 470ms; }
+
+  /* Apple-style Tactile Button */
+  .apple-btn {
+    transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1), background-color 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
+    will-change: transform;
+  }
+  .apple-btn:hover {
+    transform: scale(1.015);
+  }
+  .apple-btn:active {
+    transform: scale(0.97);
+  }
+
+  /* Apple Card Smooth Lift */
+  .apple-card {
+    transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 450ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms ease;
+    will-change: transform, box-shadow;
+  }
+  .apple-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 16px 36px -10px rgba(15, 23, 42, 0.08);
+  }
+
+  /* Frosted Glass UI */
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/50 shadow-sm;
+    @apply bg-white/75 backdrop-blur-xl border border-white/60 shadow-sm;
   }
   
   .glass-nav {
-    @apply bg-white/80 backdrop-blur-md border-b border-border/50 shadow-sm;
+    @apply bg-white/75 backdrop-blur-xl border-b border-slate-200/50 shadow-[0_2px_12px_-2px_rgba(0,0,0,0.03)];
+    transition: background-color 300ms cubic-bezier(0.22, 1, 0.36, 1), border-color 300ms cubic-bezier(0.22, 1, 0.36, 1), box-shadow 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .glass-nav-scrolled {
+    @apply bg-white/85 backdrop-blur-2xl border-b border-slate-200/80 shadow-[0_4px_24px_-4px_rgba(15,23,42,0.06)];
   }
   
   .bg-mesh-leaf {
@@ -97,5 +196,14 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-leaf-deep to-leaf;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

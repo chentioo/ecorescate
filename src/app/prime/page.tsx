@@ -174,18 +174,18 @@ export default function PrimePage() {
         <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/80 to-transparent" />
         
         <div className="relative z-10 max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 px-4 py-1.5 rounded-full text-sm font-bold border border-amber-500/30 mb-6 shadow-sm">
+          <div className="inline-flex items-center gap-2 bg-amber-500/20 text-amber-300 px-4 py-1.5 rounded-full text-sm font-bold border border-amber-500/30 mb-6 shadow-sm animate-apple-fade-up">
             <Crown className="size-4 text-amber-400" /> EcoRescate Prime
           </div>
-          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6">
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 animate-apple-fade-up stagger-1">
             Salva comida con Delivery Ecológico Ilimitado.
           </h1>
-          <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10">
+          <p className="text-lg sm:text-xl text-slate-300 max-w-2xl mx-auto mb-10 animate-apple-fade-up stagger-2">
             Únete a nuestra membresía premium y disfruta de envíos sin costo en bicicletas eléctricas, prioridad en packs sorpresa y siembra de árboles en la Amazonía.
           </p>
 
           {!isStudent && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 max-w-lg mx-auto backdrop-blur-sm">
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-4 max-w-lg mx-auto backdrop-blur-sm animate-apple-fade-up stagger-3">
               <p className="text-amber-100 text-sm">
                 <strong className="text-amber-400">🎓 ¿Estudias en la universidad?</strong><br />
                 Inicia sesión con tu correo <span className="font-mono bg-black/40 px-1.5 py-0.5 rounded text-amber-200">.edu.pe</span> y obtén <strong>50% de descuento</strong> automático.
@@ -200,7 +200,7 @@ export default function PrimePage() {
         <div className="max-w-6xl mx-auto grid lg:grid-cols-12 gap-8 items-start">
           
           {/* Columna Izquierda: Beneficios (5 columnas) */}
-          <div className="lg:col-span-5 space-y-6 pt-2">
+          <div className="lg:col-span-5 space-y-6 pt-2 animate-apple-fade-up stagger-1">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
               ¿Por qué ser miembro Prime?
             </h2>
@@ -208,7 +208,7 @@ export default function PrimePage() {
               Diseñado para comensales frecuentes que quieren ahorrar más dinero y maximizar su impacto verde.
             </p>
             
-            <div className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
+            <div className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs apple-card">
               <div className="shrink-0 size-12 bg-amber-100 rounded-2xl flex items-center justify-center">
                 <Truck className="size-6 text-amber-600" />
               </div>
@@ -218,7 +218,7 @@ export default function PrimePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
+            <div className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs apple-card">
               <div className="shrink-0 size-12 bg-emerald-100 rounded-2xl flex items-center justify-center">
                 <ShieldCheck className="size-6 text-emerald-600" />
               </div>
@@ -228,7 +228,7 @@ export default function PrimePage() {
               </div>
             </div>
 
-            <div className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-200 shadow-xs">
+            <div className="flex gap-4 p-4 rounded-2xl bg-white border border-slate-200/80 shadow-xs apple-card">
               <div className="shrink-0 size-12 bg-blue-100 rounded-2xl flex items-center justify-center">
                 <Star className="size-6 text-blue-600" />
               </div>
@@ -238,7 +238,7 @@ export default function PrimePage() {
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/80 apple-card">
               <p className="text-xs text-amber-900 flex items-center gap-1.5 font-bold">
                 <Lock className="size-3.5 text-amber-600" />
                 <span>Cancela en cualquier momento sin penalidad</span>
@@ -250,7 +250,7 @@ export default function PrimePage() {
           </div>
 
           {/* Columna Derecha: Tarjeta de Suscripción con Métodos de Pago (7 columnas) */}
-          <div className="lg:col-span-7 bg-white rounded-3xl shadow-xl border border-slate-200 p-6 sm:p-8 relative overflow-hidden">
+          <div className="lg:col-span-7 bg-white rounded-3xl shadow-xl border border-slate-200/80 p-6 sm:p-8 relative overflow-hidden animate-apple-fade-up stagger-2">
             <div className="absolute top-0 inset-x-0 h-2.5 bg-gradient-to-r from-amber-400 via-amber-500 to-amber-600" />
             
             {/* Selector de Ciclo de Facturación */}
@@ -259,8 +259,8 @@ export default function PrimePage() {
                 <button 
                   type="button"
                   onClick={() => setIsAnnual(false)}
-                  className={`px-4 py-2 rounded-xl transition ${
-                    !isAnnual ? "bg-white shadow-sm text-slate-900 font-bold" : "text-slate-500 hover:text-slate-700"
+                  className={`px-4 py-2 rounded-xl transition-all duration-200 apple-btn ${
+                    !isAnnual ? "bg-white shadow-xs text-slate-900 font-bold" : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
                   Mensual
@@ -268,8 +268,8 @@ export default function PrimePage() {
                 <button 
                   type="button"
                   onClick={() => setIsAnnual(true)}
-                  className={`px-4 py-2 rounded-xl transition flex items-center gap-1.5 ${
-                    isAnnual ? "bg-white shadow-sm text-slate-900 font-bold" : "text-slate-500 hover:text-slate-700"
+                  className={`px-4 py-2 rounded-xl transition-all duration-200 flex items-center gap-1.5 apple-btn ${
+                    isAnnual ? "bg-white shadow-xs text-slate-900 font-bold" : "text-slate-500 hover:text-slate-700"
                   }`}
                 >
                   <span>Anual</span>
@@ -413,7 +413,7 @@ export default function PrimePage() {
               type="button"
               onClick={handleSubscribe}
               disabled={isProcessing}
-              className="w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-900/20 transition text-base flex items-center justify-center gap-2 disabled:opacity-75"
+              className="apple-btn w-full bg-slate-900 hover:bg-slate-800 text-white font-black py-4 rounded-2xl shadow-xl shadow-slate-900/20 text-base flex items-center justify-center gap-2 disabled:opacity-75"
             >
               {isProcessing ? (
                 <>
